@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, CategoryTile, ProductCard, SectionHeading, StepCard } from "@/app/components/ui";
+import { getProducts, type Product } from "@/app/lib/api-client";
 
 const categories = [
   {
@@ -28,27 +32,45 @@ const categories = [
   },
 ];
 
-const bestsellers = [
-  {
-    name: "Sculpted pearl drop",
-    price: "From ₹14,800",
-    image: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80",
-    badge: "Bestseller",
-  },
-  {
-    name: "Contour diamond ring",
-    price: "From ₹12,200",
-    image: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=900&q=80",
-    badge: "New",
-  },
-  {
-    name: "Lattice cuff bracelet",
-    price: "From ₹9,400",
-    image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80",
-  },
-];
-
 export default function Home() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getProducts()
+      .then((items) => {
+        if (isMounted) {
+          setProducts(items);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Unable to load products");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const featuredProducts = products.slice(0, 3).map((product) => ({
+    name: product.name,
+    price: `From ₹${product.base_price.toLocaleString("en-IN")}`,
+    image: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80",
+    badge: product.category,
+    href: `/product?id=${product.id}`,
+  }));
+
   return (
     <SiteShell activePage="/" cartCount={2}>
       <section className="overflow-hidden rounded-[2.25rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
@@ -101,11 +123,19 @@ export default function Home() {
 
       <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
         <SectionHeading eyebrow="Popular now" title="Our most-loved pieces" />
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {bestsellers.map((product) => (
-            <ProductCard key={product.name} {...product} href="/product" />
-          ))}
-        </div>
+        {loading ? (
+          <p className="mt-6 text-sm text-stone-600">Loading products…</p>
+        ) : error ? (
+          <p className="mt-6 text-sm text-rose-600">{error}</p>
+        ) : featuredProducts.length > 0 ? (
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.name} {...product} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-6 text-sm text-stone-600">No products are available right now.</p>
+        )}
       </section>
     </SiteShell>
   );

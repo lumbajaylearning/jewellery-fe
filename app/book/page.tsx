@@ -1,10 +1,70 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, SectionHeading } from "@/app/components/ui";
+import { createBooking } from "@/app/lib/api-client";
 
 const slots = ["09:00", "10:30", "12:00", "14:00", "16:30", "18:00"];
 const addresses = ["Home • 12, Orchard Lane", "Office • 45, Marina Street"];
 
+interface CartItem {
+    id: number;
+    name: string;
+    price: number;
+    note: string;
+}
+
 export default function BookPage() {
+    const router = useRouter();
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+    const [selectedAddress, setSelectedAddress] = useState(addresses[0]);
+    const [selectedSlot, setSelectedSlot] = useState(slots[1]);
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        try {
+            const stored = window.localStorage.getItem("consultation-cart");
+            if (stored) {
+                const parsed = JSON.parse(stored) as CartItem[];
+                if (Array.isArray(parsed)) {
+                    setCartItems(parsed);
+                }
+            }
+        } catch {
+            setError("Unable to load your consultation cart.");
+        }
+    }, []);
+
+    const itemCount = useMemo(() => cartItems.length, [cartItems]);
+
+    const handleSubmit = async () => {
+        if (cartItems.length === 0) {
+            setError("Add at least one item before booking.");
+            return;
+        }
+
+        setSubmitting(true);
+        setError(null);
+
+        try {
+            const booking = await createBooking({
+                customer_name: "Guest customer",
+                slot: selectedSlot,
+                booking_items: cartItems.map((item) => ({ product_id: item.id, quantity: 1, note: item.note })),
+            });
+
+            window.localStorage.removeItem("consultation-cart");
+            router.push(`/confirmation?bookingId=${booking.id}&slot=${encodeURIComponent(booking.slot)}&items=${booking.booking_items.length}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unable to create booking");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
         <SiteShell activePage="/cart" cartCount={3}>
             <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
@@ -24,7 +84,7 @@ export default function BookPage() {
                         <div className="mt-4 space-y-3">
                             {addresses.map((address) => (
                                 <label key={address} className="flex items-center gap-3 rounded-[1.2rem] border border-stone-200 p-4">
-                                    <input type="radio" name="address" defaultChecked={address === addresses[0]} />
+                                    <input type="radio" name="address" checked={selectedAddress === address} onChange={() => setSelectedAddress(address)} />
                                     <span className="text-sm text-stone-700">{address}</span>
                                 </label>
                             ))}
@@ -42,7 +102,11 @@ export default function BookPage() {
                         <SectionHeading eyebrow="Time" title="Choose a slot" />
                         <div className="mt-4 flex flex-wrap gap-3">
                             {slots.map((slot) => (
-                                <button key={slot} className="rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700">
+                                <button
+                                    key={slot}
+                                    onClick={() => setSelectedSlot(slot)}
+                                    className={slot === selectedSlot ? "rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-700"}
+                                >
                                     {slot}
                                 </button>
                             ))}
@@ -54,11 +118,14 @@ export default function BookPage() {
                     <SectionHeading eyebrow="Summary" title="Your booking overview" />
                     <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 text-sm leading-7 text-stone-600">
                         <p><span className="font-semibold text-stone-900">Date:</span> Wednesday, 14 August</p>
-                        <p><span className="font-semibold text-stone-900">Time:</span> 10:30 AM</p>
-                        <p><span className="font-semibold text-stone-900">Address:</span> Home • 12, Orchard Lane</p>
-                        <p><span className="font-semibold text-stone-900">Items:</span> 3 pieces in consultation</p>
+                        <p><span className="font-semibold text-stone-900">Time:</span> {selectedSlot}</p>
+                        <p><span className="font-semibold text-stone-900">Address:</span> {selectedAddress}</p>
+                        <p><span className="font-semibold text-stone-900">Items:</span> {itemCount} piece{itemCount === 1 ? "" : "s"} in consultation</p>
                     </div>
-                    <Button href="/confirmation" variant="primary">Confirm booking</Button>
+                    {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+                    <Button onClick={handleSubmit} variant="primary" disabled={submitting}>
+                        {submitting ? "Submitting…" : "Confirm booking"}
+                    </Button>
                 </div>
             </section>
         </SiteShell>

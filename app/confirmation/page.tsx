@@ -1,8 +1,15 @@
-import Link from "next/link";
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, StepCard } from "@/app/components/ui";
 
 export default function ConfirmationPage() {
+    const searchParams = useSearchParams();
+    const bookingId = searchParams.get("bookingId") ?? "Pending";
+    const slot = searchParams.get("slot") ?? "To be confirmed";
+    const itemCount = searchParams.get("items") ?? "0";
+
     return (
         <SiteShell activePage="/cart" cartCount={0}>
             <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
@@ -17,10 +24,11 @@ export default function ConfirmationPage() {
                 <div className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
                     <h2 className="text-2xl font-semibold text-stone-900">Booking summary</h2>
                     <div className="mt-6 space-y-3 text-sm leading-7 text-stone-600">
+                        <p><span className="font-semibold text-stone-900">Booking ID:</span> #{bookingId}</p>
                         <p><span className="font-semibold text-stone-900">Date:</span> Wednesday, 14 August</p>
-                        <p><span className="font-semibold text-stone-900">Time:</span> 10:30 AM</p>
+                        <p><span className="font-semibold text-stone-900">Time:</span> {slot}</p>
                         <p><span className="font-semibold text-stone-900">Address:</span> Home • 12, Orchard Lane</p>
-                        <p><span className="font-semibold text-stone-900">Items:</span> 3 pieces shortlisted</p>
+                        <p><span className="font-semibold text-stone-900">Items:</span> {itemCount} piece{Number(itemCount) === 1 ? "" : "s"} shortlisted</p>
                     </div>
                     <div className="mt-6 flex flex-wrap gap-3">
                         <Button href="/consultations" variant="primary">View consultations</Button>
