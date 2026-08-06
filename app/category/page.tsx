@@ -6,17 +6,20 @@ import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, ProductCard, SectionHeading } from "@/app/components/ui";
 import { getProducts, type Product } from "@/app/lib/api-client";
 
-const filters = ["All pieces", "Occasion: weddings", "Budget: under 15k", "Available this week"];
+const filters = ["All pieces", "Rings", "Necklaces", "Bracelets"];
 
 export default function CategoryPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeFilter, setActiveFilter] = useState("All pieces");
 
     useEffect(() => {
         let isMounted = true;
 
-        getProducts()
+        const category = activeFilter === "All pieces" ? undefined : activeFilter;
+
+        getProducts({ category })
             .then((items) => {
                 if (isMounted) {
                     setProducts(items);
@@ -37,7 +40,7 @@ export default function CategoryPage() {
         return () => {
             isMounted = false;
         };
-    }, []);
+    }, [activeFilter]);
 
     return (
         <SiteShell activePage="/category" cartCount={2}>
@@ -63,7 +66,11 @@ export default function CategoryPage() {
                     <SectionHeading eyebrow="Refine your edit" title="Find the right pieces quickly" />
                     <div className="flex flex-wrap gap-3">
                         {filters.map((filter) => (
-                            <button key={filter} className="rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-600">
+                            <button
+                                key={filter}
+                                onClick={() => setActiveFilter(filter)}
+                                className={filter === activeFilter ? "rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-600"}
+                            >
                                 {filter}
                             </button>
                         ))}

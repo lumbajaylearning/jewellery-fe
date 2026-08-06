@@ -42,6 +42,10 @@ export interface BookingItemPayload {
 export interface BookingPayload {
     customer_name: string;
     slot: string;
+    address?: string | null;
+    preferred_date?: string | null;
+    preferred_time?: string | null;
+    notes?: string | null;
     booking_items: BookingItemPayload[];
 }
 
@@ -49,12 +53,29 @@ export interface BookingResponse {
     id: number;
     customer_name: string;
     slot: string;
+    address?: string | null;
+    preferred_date?: string | null;
+    preferred_time?: string | null;
+    notes?: string | null;
     status: string;
     booking_items: BookingItemPayload[];
 }
 
-export async function getProducts(): Promise<Product[]> {
-    return apiRequest<Product[]>("/api/products");
+export async function getProducts(params?: { category?: string; min_price?: number; max_price?: number }): Promise<Product[]> {
+    const search = new URLSearchParams();
+
+    if (params?.category) {
+        search.set("category", params.category);
+    }
+    if (params?.min_price !== undefined) {
+        search.set("min_price", String(params.min_price));
+    }
+    if (params?.max_price !== undefined) {
+        search.set("max_price", String(params.max_price));
+    }
+
+    const query = search.toString();
+    return apiRequest<Product[]>(query ? `/api/products?${query}` : "/api/products");
 }
 
 export async function getProduct(productId: string | number): Promise<Product> {

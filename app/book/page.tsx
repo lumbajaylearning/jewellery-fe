@@ -21,6 +21,8 @@ export default function BookPage() {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [selectedAddress, setSelectedAddress] = useState(addresses[0]);
     const [selectedSlot, setSelectedSlot] = useState(slots[1]);
+    const [selectedDate, setSelectedDate] = useState("Wednesday, 14 August 2026");
+    const [notes, setNotes] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -53,6 +55,10 @@ export default function BookPage() {
             const booking = await createBooking({
                 customer_name: "Guest customer",
                 slot: selectedSlot,
+                address: selectedAddress,
+                preferred_date: selectedDate,
+                preferred_time: selectedSlot,
+                notes,
                 booking_items: cartItems.map((item) => ({ product_id: item.id, quantity: 1, note: item.note })),
             });
 
@@ -94,8 +100,19 @@ export default function BookPage() {
                     <div>
                         <SectionHeading eyebrow="Date" title="Select a date" />
                         <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-[var(--surface)] p-5 text-sm text-stone-700">
-                            Wednesday, 14 August 2026
+                            {selectedDate}
                         </div>
+                    </div>
+
+                    <div>
+                        <SectionHeading eyebrow="Notes" title="Add visit notes" />
+                        <textarea
+                            className="mt-4 w-full rounded-[1.2rem] border border-stone-300 px-4 py-3 text-sm text-stone-700 outline-none"
+                            rows={4}
+                            value={notes}
+                            onChange={(event) => setNotes(event.target.value)}
+                            placeholder="Mention sizing questions, security access, or anything the representative should know."
+                        />
                     </div>
 
                     <div>
@@ -117,10 +134,11 @@ export default function BookPage() {
                 <div className="space-y-6 rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
                     <SectionHeading eyebrow="Summary" title="Your booking overview" />
                     <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 text-sm leading-7 text-stone-600">
-                        <p><span className="font-semibold text-stone-900">Date:</span> Wednesday, 14 August</p>
+                        <p><span className="font-semibold text-stone-900">Date:</span> {selectedDate}</p>
                         <p><span className="font-semibold text-stone-900">Time:</span> {selectedSlot}</p>
                         <p><span className="font-semibold text-stone-900">Address:</span> {selectedAddress}</p>
                         <p><span className="font-semibold text-stone-900">Items:</span> {itemCount} piece{itemCount === 1 ? "" : "s"} in consultation</p>
+                        {notes ? <p><span className="font-semibold text-stone-900">Notes:</span> {notes}</p> : null}
                     </div>
                     {error ? <p className="text-sm text-rose-600">{error}</p> : null}
                     <Button onClick={handleSubmit} variant="primary" disabled={submitting}>
