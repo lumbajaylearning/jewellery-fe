@@ -2,54 +2,29 @@
 
 import { useEffect, useState } from "react";
 import SiteShell from "@/app/components/site-shell";
-import { Badge, Button, CategoryTile, ProductCard, SectionHeading, StepCard } from "@/app/components/ui";
-import { getProducts, type Product } from "@/app/lib/api-client";
-
-const categories = [
-  {
-    title: "Earrings",
-    blurb: "Lightweight sculptural drops and stacked studs.",
-    image: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80",
-    href: "/category",
-  },
-  {
-    title: "Necklaces",
-    blurb: "Layered chains and polished pendants for everyday elegance.",
-    image: "https://images.unsplash.com/photo-1617038220319-276d3cfab638?auto=format&fit=crop&w=900&q=80",
-    href: "/category",
-  },
-  {
-    title: "Rings",
-    blurb: "Modern silhouettes with a soft, editorial finish.",
-    image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80",
-    href: "/category",
-  },
-  {
-    title: "Wristwear",
-    blurb: "Curved cuffs and delicate bracelets for layered styling.",
-    image: "https://images.unsplash.com/photo-1601821765780-754fa98637c1?auto=format&fit=crop&w=900&q=80",
-    href: "/category",
-  },
-];
+import SectionRenderer from "@/app/components/homepage/SectionRenderer";
+import { fetchHomepageData, type Product } from "@/app/lib/api-client";
+import type { Section } from "@/app/types/homepage";
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
 
-    getProducts()
-      .then((items) => {
+    fetchHomepageData()
+      .then((data) => {
         if (isMounted) {
-          setProducts(items);
+          setSections(data.data.sections);
           setError(null);
         }
       })
       .catch((err) => {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Unable to load products");
+          console.error("Failed to fetch homepage data:", err);
+          setError(err instanceof Error ? err.message : "Unable to load homepage data");
         }
       })
       .finally(() => {
@@ -63,80 +38,38 @@ export default function Home() {
     };
   }, []);
 
-  const featuredProducts = products.slice(0, 3).map((product) => ({
-    name: product.name,
-    price: `From ₹${product.base_price.toLocaleString("en-IN")}`,
-    image: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80",
-    badge: product.category,
-    href: `/product?id=${product.id}`,
-  }));
-
   return (
     <SiteShell activePage="/" cartCount={2}>
-      <section className="overflow-hidden rounded-[2.25rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="max-w-2xl">
-            <Badge label="Curated at home" tone="gold" />
-            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl">
-              Experience fine jewellery through a private home consultation.
-            </h1>
-            <p className="mt-5 text-lg leading-8 text-stone-600">
-              Browse a thoughtful edit, build a shortlist of up to four pieces, and invite a representative to visit your home with the selection.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button href="/category" variant="primary">
-                Explore collections
-              </Button>
-              <Button href="/book" variant="secondary">
-                Book a visit
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-stone-200 bg-white p-4 shadow-[0_30px_80px_rgba(17,17,17,0.08)]">
-            <img
-              src="https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=1200&q=80"
-              alt="Fine jewellery styling"
-              className="h-[420px] w-full rounded-[1.4rem] object-cover"
-            />
+      {loading ? (
+        <div className="flex justify-center items-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-stone-600">Loading homepage...</p>
           </div>
         </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
-        <SectionHeading eyebrow="Collections" title="A refined view of signature pieces" text="Choose by style, occasion, or the feeling you want to bring into your space." />
-        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {categories.map((category) => (
-            <CategoryTile key={category.title} {...category} />
-          ))}
+      ) : error ? (
+        <div className="rounded-[2.25rem] border border-rose-200 bg-rose-50 p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-rose-900 mb-2">Error Loading Homepage</h2>
+          <p className="text-rose-700">{error}</p>
+          <button
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              window.location.reload();
+            }}
+            className="mt-4 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+          >
+            Retry
+          </button>
         </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
-        <SectionHeading eyebrow="How it works" title="A simple flow from browse to booking" />
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          <StepCard number="1" title="Browse" text="Discover a curated collection online and create a shortlist of pieces you love." />
-          <StepCard number="2" title="Book" text="Reserve a home visit with a representative who brings your selected pieces." />
-          <StepCard number="3" title="Choose" text="Try everything on, keep what you love, and buy only the pieces you decide to take home." />
+      ) : sections.length > 0 ? (
+        <SectionRenderer sections={sections} />
+      ) : (
+        <div className="rounded-[2.25rem] border border-stone-200 bg-white p-6 sm:p-8">
+          <p className="text-center text-stone-600">No sections available to display.</p>
         </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
-        <SectionHeading eyebrow="Popular now" title="Our most-loved pieces" />
-        {loading ? (
-          <p className="mt-6 text-sm text-stone-600">Loading products…</p>
-        ) : error ? (
-          <p className="mt-6 text-sm text-rose-600">{error}</p>
-        ) : featuredProducts.length > 0 ? (
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.name} {...product} />
-            ))}
-          </div>
-        ) : (
-          <p className="mt-6 text-sm text-stone-600">No products are available right now.</p>
-        )}
-      </section>
+      )}
     </SiteShell>
   );
 }
+

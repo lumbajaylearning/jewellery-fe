@@ -94,9 +94,9 @@ export function CategoryTile({
     href: string;
 }) {
     return (
-        <Link href={href} className="group overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white">
+        <Link href={href || '#'} className="group overflow-hidden rounded-[1.75rem] border border-stone-200 bg-white">
             <div className="relative h-56 overflow-hidden">
-                <img src={image} alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                <img src={image || 'vercel.svg'} alt={title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-stone-950/30 to-transparent" />
             </div>
             <div className="p-6">
@@ -123,7 +123,7 @@ export function ProductCard({
     return (
         <article className="overflow-hidden rounded-[1.75rem] border border-stone-200 bg-[var(--surface)] p-4">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[1.2rem] bg-stone-100">
-                <img src={image} alt={name} className="h-full w-full object-cover" />
+                <img src={image || 'vercel.svg'} alt={name} className="h-full w-full object-cover" />
                 {badge ? (
                     <div className="absolute left-4 top-4">
                         <Badge label={badge} tone="gold" />

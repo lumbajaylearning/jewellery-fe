@@ -65,7 +65,7 @@ export default function ProductPage() {
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
                     {gallery.map((image, index) => (
                         <div key={image} className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white">
-                            <img src={image} alt={`Piece view ${index + 1}`} className="h-56 w-full object-cover" />
+                            <img src={image || 'vercel.svg'} alt={`Piece view ${index + 1}`} className="h-56 w-full object-cover" />
                         </div>
                     ))}
                 </div>
@@ -114,7 +114,7 @@ export default function ProductPage() {
                 <div className="mt-8 grid gap-6 md:grid-cols-3">
                     {related.map((item) => (
                         <article key={item.name} className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[var(--surface)]">
-                            <img src={item.image} alt={item.name} className="h-48 w-full object-cover" />
+                            <img src={item.image || 'vercel.svg'} alt={item.name} className="h-48 w-full object-cover" />
                             <div className="p-5">
                                 <h3 className="text-lg font-semibold text-stone-900">{item.name}</h3>
                                 <p className="mt-2 text-sm text-stone-600">{item.price}</p>

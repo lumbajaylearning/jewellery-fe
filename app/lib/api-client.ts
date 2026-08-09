@@ -1,3 +1,5 @@
+import type { HomepageData } from "@/app/types/homepage";
+
 const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 function buildApiUrl(path: string) {
@@ -87,4 +89,10 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function fetchHomepageData(): Promise<HomepageData> {
+    // Construct the URL for the Strapi homepage endpoint
+    // You may need to adjust this path based on your actual Strapi endpoint
+    return apiRequest<HomepageData>("/api/homepage?populate=*");
 }
