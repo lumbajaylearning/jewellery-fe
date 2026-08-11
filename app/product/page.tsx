@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, CartProgress, SectionHeading } from "@/app/components/ui";
 import { getProduct, type Product } from "@/app/lib/api-client";
@@ -64,8 +65,8 @@ export default function ProductPage() {
             <section className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
                 <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-1">
                     {gallery.map((image, index) => (
-                        <div key={image} className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white">
-                            <img src={image || 'vercel.svg'} alt={`Piece view ${index + 1}`} className="h-56 w-full object-cover" />
+                        <div key={image} className="relative overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white h-56">
+                            <Image src={image || 'vercel.svg'} alt={`Piece view ${index + 1}`} fill className="object-cover" />
                         </div>
                     ))}
                 </div>
@@ -114,7 +115,9 @@ export default function ProductPage() {
                 <div className="mt-8 grid gap-6 md:grid-cols-3">
                     {related.map((item) => (
                         <article key={item.name} className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-[var(--surface)]">
-                            <img src={item.image || 'vercel.svg'} alt={item.name} className="h-48 w-full object-cover" />
+                            <div className="relative h-48">
+                                <Image src={item.image || 'vercel.svg'} alt={item.name} fill className="object-cover" />
+                            </div>
                             <div className="p-5">
                                 <h3 className="text-lg font-semibold text-stone-900">{item.name}</h3>
                                 <p className="mt-2 text-sm text-stone-600">{item.price}</p>

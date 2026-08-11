@@ -1,3 +1,19 @@
+// Image interface for Strapi media objects
+export interface StrapiImage {
+    id: number;
+    documentId: string;
+    name: string;
+    url: string;
+    width: number;
+    height: number;
+    formats?: {
+        thumbnail?: { url: string };
+        small?: { url: string };
+        medium?: { url: string };
+        large?: { url: string };
+    };
+}
+
 // Base interface for all sections
 interface BaseSection {
     id: number;
@@ -12,8 +28,8 @@ export interface HeroBannerSection extends BaseSection {
     ctaText: string;
     ctaLink: string;
     alignment: string | null;
-    desktopImage: any[];
-    mobileImage: any[];
+    desktopImage: StrapiImage | null;
+    mobileImage: StrapiImage | null;
 }
 
 // Category Grid Section
@@ -31,7 +47,7 @@ export interface CollectionShowcaseSection extends BaseSection {
     subtitle: string;
     ctaText: string;
     ctaLink: string;
-    image: any | null;
+    image: StrapiImage | null;
 }
 
 // Product Carousel Section
@@ -51,7 +67,7 @@ export interface HomeTrialSection extends BaseSection {
     description: string;
     ctaText: string;
     ctaLink: string;
-    image: any | null;
+    image: StrapiImage | null;
 }
 
 // How It Works Step Section
@@ -60,7 +76,7 @@ export interface HowItWorksStepSection extends BaseSection {
     number: number;
     title: string;
     description: string;
-    icon: any | null;
+    icon: StrapiImage | null;
 }
 
 // Trust Section
@@ -75,7 +91,7 @@ export interface TrustItemSection extends BaseSection {
     __component: "homepage.trust-item";
     title: string;
     description: string;
-    icon: any | null;
+    icon: StrapiImage | null;
 }
 
 // Editorial Section
@@ -92,7 +108,7 @@ export interface CtaBannerSection extends BaseSection {
     description: string;
     ctaText: string;
     ctaLink: string;
-    image: any | null;
+    image: StrapiImage | null;
 }
 
 // Discriminated union type of all sections

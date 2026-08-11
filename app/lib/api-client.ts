@@ -94,5 +94,5 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
 export async function fetchHomepageData(): Promise<HomepageData> {
     // Construct the URL for the Strapi homepage endpoint
     // You may need to adjust this path based on your actual Strapi endpoint
-    return apiRequest<HomepageData>("/api/homepage?populate=*");
+    return apiRequest<HomepageData>("/api/homepage?populate[sections][populate]=*");
 }
