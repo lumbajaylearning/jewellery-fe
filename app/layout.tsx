@@ -3,7 +3,8 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/app/components/layout/Navbar";
 import { getSiteSetting } from "@/app/lib/strapi/queries";
-import Footer from "./components/layout/Footer";
+import Footer from "@/app/components/layout/Footer";
+import AnnouncementBar from "@/app/components/layout/AnnouncementBar";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default async function RootLayout({
       className={`${cormorant.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <AnnouncementBar {...siteSettings.data.announcementBar} />
         <Navbar />
         {children}
         <Footer {...siteSettings.data.footer} />
