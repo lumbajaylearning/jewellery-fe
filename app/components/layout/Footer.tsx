@@ -37,8 +37,8 @@ export const Footer: React.FC<FooterProps> = ({
     legalLinks = DEFAULT_LEGAL_LINKS,
 }) => {
     return (
-        <footer className="bg-primary border-t border-gray-100 pt-12 pb-8 md:pt-16 md:pb-12 text-center md:text-left">
-            <div className="max-w-6xl mx-auto px-5">
+        <footer className="w-full flex flex-col items-center bg-primary border-t border-gray-100 pt-12 pb-8 md:pt-16 md:pb-12 text-center md:text-left">
+            <div className="w-full max-w-7xl px-5">
 
                 {/* Top Grid: Brand info & Dynamic Navigation Columns */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 pb-12">

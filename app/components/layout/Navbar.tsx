@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     };
 
     return (
-        <header className="sticky top-0 z-50  backdrop-blur-md border-b border-gray-100">
+        <header className="sticky w-full top-0 z-50  backdrop-blur-md border-b border-gray-100">
             <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
 
                 {/* Left / Center: Brand Logo */}

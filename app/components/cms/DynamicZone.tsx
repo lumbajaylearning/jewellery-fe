@@ -37,7 +37,7 @@ export default function DynamicZone({
                     case "homepage.featured-jewellery": {
                         const { id, __component, ...props } = section;
                         return (
-                            <FeaturedJewellery key={id} {...props} />
+                            <FeaturedJewellery key={`featured-jewellery-${id}`} {...props} />
                         );
                     }
 
@@ -48,12 +48,12 @@ export default function DynamicZone({
 
                     case "homepage.testimonials": {
                         const { id, __component, ...props } = section;
-                        return <Testimonials key={id} {...props} />;
+                        return <Testimonials key={`testimonials-${id}`} {...props} />;
                     }
 
                     case "homepage.final-cta": {
                         const { id, __component, ...props } = section;
-                        return <FinalCTA key={id} {...props} />;
+                        return <FinalCTA key={`final-cta-${id}`} {...props} />;
                     }
 
                     default:

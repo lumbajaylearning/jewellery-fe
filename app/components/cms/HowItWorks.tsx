@@ -23,7 +23,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
     steps,
 }) => {
     return (
-        <section className="max-w-6xl mx-auto px-5 py-12 md:py-20 flex flex-col items-center text-center gap-12 md:gap-16">
+        <section className=" py-12 md:py-20 flex flex-col items-center text-center gap-12 md:gap-16">
 
             {/* Header Block */}
             <div className="space-y-3 max-w-2xl">

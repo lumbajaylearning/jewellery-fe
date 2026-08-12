@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 // --- Types ---
@@ -22,28 +23,28 @@ export interface FeaturedJewelleryProps {
 // Fallback dummy products matching the Figma layout if none provided in props
 const DEFAULT_PRODUCTS: ProductItem[] = [
   {
-    id: 1,
+    id: "prd_1",
     name: "Aurum Solitaire Ring",
     price: "₹24,999",
     subtitle: "18K Gold · Diamond",
     imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80",
   },
   {
-    id: 2,
+    id: "prd_2",
     name: "Classic Diamond Studs",
     price: "₹18,999",
     subtitle: "18K Gold · Diamond",
     imageUrl: "https://images.unsplash.com/photo-1630019852942-f89202989a59?auto=format&fit=crop&w=600&q=80",
   },
   {
-    id: 3,
+    id: "prd_3",
     name: "Signature Pendant",
     price: "₹32,999",
     subtitle: "18K Gold · Diamond",
     imageUrl: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
   },
   {
-    id: 4,
+    id: "prd_4",
     name: "Aurum Gold Bracelet",
     price: "₹21,999",
     subtitle: "18K Gold · Diamond",
@@ -58,7 +59,7 @@ export const FeaturedJewellery: React.FC<FeaturedJewelleryProps> = ({
   products = DEFAULT_PRODUCTS,
 }) => {
   return (
-    <section className="max-w-6xl mx-auto px-5 py-12 md:py-20 flex flex-col items-center text-center gap-10 md:gap-12">
+    <section className=" py-12 md:py-20 flex flex-col items-center text-center gap-10 md:gap-12">
 
       {/* Header Block */}
       <div className="space-y-2 max-w-xl">
@@ -92,10 +93,12 @@ export const FeaturedJewellery: React.FC<FeaturedJewelleryProps> = ({
 
               {/* Product Image Box with Heart Icon */}
               <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-sm overflow-hidden mb-3">
-                <img
-                  src={product.imageUrl}
+                <Image
+                  src={product.imageUrl || "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80"}
                   alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
 
                 {/* Wishlist / Heart Icon */}

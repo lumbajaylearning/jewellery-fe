@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 // --- Types based on your API response ---
@@ -32,7 +33,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     categories,
 }) => {
     return (
-        <section className="max-w-6xl mx-auto px-5 py-12 flex flex-col items-center gap-10 md:gap-12 text-center">
+        <section className=" py-12 flex flex-col items-center gap-10 md:gap-12 text-center">
 
             {/* Header Block */}
             <div className="space-y-2 max-w-xl">
@@ -67,11 +68,13 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                             href={category.link}
                             className="group flex flex-col items-center gap-3"
                         >
-                            <div className="w-full aspect-[4/5] bg-gray-200 rounded-sm overflow-hidden">
-                                <img
+                            <div className="relative w-full aspect-[4/5] bg-gray-200 rounded-sm overflow-hidden">
+                                <Image
                                     src={imgSrc}
                                     alt={category.name}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    fill
+                                    sizes="(max-width: 768px) 50vw, 25vw"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
                             </div>
                             <span className="text-sm font-medium text-gray-800 group-hover:text-black">

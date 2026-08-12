@@ -1,8 +1,19 @@
+import Image from "next/image";
 import { HeroBannerProps } from "@/app/types/homepage";
 
 type HeroBannerComponentProps = Omit<HeroBannerProps, "id" | "__component">;
 
-const STRAPI_URL = process.env.STRAPI_URL!;
+const STRAPI_URL =
+    process.env.NEXT_PUBLIC_STRAPI_URL ??
+    process.env.STRAPI_URL ??
+    "http://127.0.0.1:1337";
+
+function resolveStrapiImageUrl(url?: string | null) {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    const normalized = url.startsWith("/") ? url : `/${url}`;
+    return `${STRAPI_URL.replace(/\/$/, "")}${normalized}`;
+}
 
 export default function HeroBanner({
     eyebrow,
@@ -12,10 +23,10 @@ export default function HeroBanner({
     ctaLink,
     image,
 }: HeroBannerComponentProps) {
-    const imageUrl = image?.url ? `${STRAPI_URL}${image.url}` : null;
+    const imageUrl = resolveStrapiImageUrl(image?.url);
 
     return (
-        <section className="max-w-6xl mx-auto px-5 py-12 flex flex-col-reverse md:flex-row items-center gap-10 md:gap-16">
+        <section className=" py-12 flex flex-col-reverse md:flex-row items-center gap-10 md:gap-16">
 
 
             <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-6">
@@ -53,12 +64,16 @@ export default function HeroBanner({
 
             </div>
 
-            <div className="w-full md:flex-1 h-[320px] sm:h-[420px] md:h-[520px]">
+            <div className="relative w-full md:w-[48%] h-[320px] sm:h-[420px] md:h-[520px] overflow-hidden rounded-sm">
                 {imageUrl && (
-                    <img
+                    <Image
                         src={imageUrl}
                         alt={image?.alternativeText || "Jewellery Collection"}
-                        className="w-full h-full object-cover rounded-sm"
+                        fill
+                        priority
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, 48vw"
+                        className="object-cover"
                     />
                 )}
             </div>

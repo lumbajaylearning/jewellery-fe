@@ -1,8 +1,4 @@
-const STRAPI_URL = process.env.STRAPI_URL;
-
-if (!STRAPI_URL) {
-    throw new Error("STRAPI_URL is not configured");
-}
+const STRAPI_URL = process.env.STRAPI_URL ?? "http://127.0.0.1:1337";
 
 export async function strapiFetch<T>(
     path: string,
@@ -10,6 +6,10 @@ export async function strapiFetch<T>(
 ): Promise<T> {
     const response = await fetch(`${STRAPI_URL}${path}`, {
         ...options,
+        cache: "force-cache",
+        next: {
+            revalidate: 3600,
+        },
         headers: {
             "Content-Type": "application/json",
             ...options?.headers,

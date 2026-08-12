@@ -1,4 +1,17 @@
+import Image from "next/image";
 import React from "react";
+
+const STRAPI_URL =
+  process.env.NEXT_PUBLIC_STRAPI_URL ??
+  process.env.STRAPI_URL ??
+  "http://127.0.0.1:1337";
+
+function resolveStrapiImageUrl(url?: string | null) {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const normalized = url.startsWith("/") ? url : `/${url}`;
+  return `${STRAPI_URL.replace(/\/$/, "")}${normalized}`;
+}
 
 // --- Types based on your Strapi API response ---
 export interface ImageFormat {
@@ -51,15 +64,11 @@ export const HomeTrial: React.FC<HomeTrialProps> = ({
     image?.formats?.medium?.url ||
     image?.url;
 
-  const imageUrl = rawImageUrl
-    ? rawImageUrl.startsWith("http")
-      ? rawImageUrl
-      : `${process.env.NEXT_PUBLIC_API_URL}${rawImageUrl}`
-    : "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1000&q=80";
-  console.log(imageUrl, rawImageUrl);
+  const imageUrl = resolveStrapiImageUrl(rawImageUrl) ??
+    "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1000&q=80";
 
   return (
-    <section className="max-w-6xl mx-auto px-5 py-12 md:py-20 flex flex-col-reverse md:flex-row items-center gap-10 md:gap-16">
+    <section className=" py-12 md:py-20 flex flex-col-reverse md:flex-row items-center gap-10 md:gap-16">
 
       {/* Content Block (Bottom on Mobile, Left on Desktop) */}
       <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left space-y-5">
@@ -95,11 +104,14 @@ export const HomeTrial: React.FC<HomeTrialProps> = ({
       </div>
 
       {/* Image Block (Top on Mobile, Right on Desktop) */}
-      <div className="w-full md:flex-1 h-[320px] sm:h-[420px] md:h-[500px]">
-        <img
+      <div className="relative w-full md:flex-1 h-[320px] sm:h-[420px] md:h-[500px] overflow-hidden rounded-sm bg-gray-100">
+        <Image
           src={imageUrl}
           alt={image?.alternativeText || title}
-          className="w-full h-full object-cover rounded-sm bg-gray-100"
+          fill
+          unoptimized
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover"
         />
       </div>
 
