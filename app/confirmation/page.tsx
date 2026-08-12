@@ -1,10 +1,11 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, StepCard } from "@/app/components/ui";
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
     const searchParams = useSearchParams();
     const bookingId = searchParams.get("bookingId") ?? "Pending";
     const slot = searchParams.get("slot") ?? "To be confirmed";
@@ -46,5 +47,13 @@ export default function ConfirmationPage() {
                 </div>
             </section>
         </SiteShell>
+    );
+}
+
+export default function ConfirmationPage() {
+    return (
+        <Suspense fallback={<div className="p-6 text-sm text-stone-600">Loading confirmation…</div>}>
+            <ConfirmationContent />
+        </Suspense>
     );
 }

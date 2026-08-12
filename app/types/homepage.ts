@@ -1,3 +1,9 @@
+import type { CategoryItem } from "@/app/components/cms/CategorySection";
+import type { ProductItem } from "@/app/components/cms/FeaturedJewellery";
+import type { HowItWorksStep } from "@/app/components/cms/HowItWorks";
+import type { TestimonialItem } from "@/app/components/cms/Testimonials";
+import type { StrapiImageData } from "@/app/components/cms/HomeTrial";
+
 // Image interface for Strapi media objects
 export interface StrapiImage {
     id: number;
@@ -6,6 +12,7 @@ export interface StrapiImage {
     url: string;
     width: number;
     height: number;
+    alternativeText?: string | null;
     formats?: {
         thumbnail?: { url: string };
         small?: { url: string };
@@ -20,109 +27,86 @@ interface BaseSection {
     __component: string;
 }
 
+
 // Hero Banner Section
-export interface HeroBannerSection extends BaseSection {
+export interface HeroBannerProps extends BaseSection {
     __component: "homepage.hero-banner";
+    eyebrow: string;
     title: string;
     subtitle: string;
     ctaText: string;
     ctaLink: string;
-    alignment: string | null;
-    desktopImage: StrapiImage | null;
-    mobileImage: StrapiImage | null;
+    alignment?: string | null;
+    image?: StrapiImage | null;
 }
 
-// Category Grid Section
-export interface CategoryGridSection extends BaseSection {
-    __component: "homepage.category-grid";
+// Category Section
+export interface CategorySectionData extends BaseSection {
+    __component: "homepage.category-section";
+    eyebrow?: string;
     title: string;
-    subtitle: string;
-    categoryIds: number[] | null;
-}
-
-// Collection Showcase Section
-export interface CollectionShowcaseSection extends BaseSection {
-    __component: "homepage.collection-showcase";
-    title: string;
-    subtitle: string;
-    ctaText: string;
-    ctaLink: string;
-    image: StrapiImage | null;
-}
-
-// Product Carousel Section
-export interface ProductCarouselSection extends BaseSection {
-    __component: "homepage.product-carousel";
-    title: string;
-    subtitle: string;
-    limit: number;
-    source: "trending" | "new-arrivals" | string;
+    description?: string;
+    categories: CategoryItem[];
 }
 
 // Home Trial Section
 export interface HomeTrialSection extends BaseSection {
     __component: "homepage.home-trial";
+    eyebrow?: string;
     title: string;
-    subtitle: string;
-    description: string;
-    ctaText: string;
-    ctaLink: string;
-    image: StrapiImage | null;
+    description?: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+    image?: StrapiImageData;
 }
 
-// How It Works Step Section
-export interface HowItWorksStepSection extends BaseSection {
-    __component: "homepage.how-it-works-step";
-    number: number;
+// Featured Jewellery Section
+export interface FeaturedJewellerySection extends BaseSection {
+    __component: "homepage.featured-jewellery";
+    eyebrow?: string | null;
     title: string;
-    description: string;
-    icon: StrapiImage | null;
+    description?: string | null;
+    products?: ProductItem[];
 }
 
-// Trust Section
-export interface TrustSection extends BaseSection {
-    __component: "homepage.trust-section";
+// How It Works Section
+export interface HowItWorksSection extends BaseSection {
+    __component: "homepage.how-it-works";
+    eyebrow?: string;
     title: string;
-    subtitle: string;
+    description?: string | null;
+    steps: HowItWorksStep[];
 }
 
-// Trust Item Section
-export interface TrustItemSection extends BaseSection {
-    __component: "homepage.trust-item";
+// Testimonials Section
+export interface TestimonialsSection extends BaseSection {
+    __component: "homepage.testimonials";
+    eyebrow?: string;
     title: string;
-    description: string;
-    icon: StrapiImage | null;
+    description?: string | null;
+    testimonials: TestimonialItem[];
 }
 
-// Editorial Section
-export interface EditorialSection extends BaseSection {
-    __component: "homepage.editorial";
+// Final CTA Section
+export interface FinalCTASectionData extends BaseSection {
+    __component: "homepage.final-cta";
+    eyebrow?: string | null;
     title: string;
-    subtitle: string;
-}
-
-// CTA Banner Section
-export interface CtaBannerSection extends BaseSection {
-    __component: "homepage.cta-banner";
-    title: string;
-    description: string;
-    ctaText: string;
-    ctaLink: string;
-    image: StrapiImage | null;
+    description?: string | null;
+    ctaLabel?: string | null;
+    ctaUrl?: string | null;
+    image?: unknown | null;
 }
 
 // Discriminated union type of all sections
 export type Section =
-    | HeroBannerSection
-    | CategoryGridSection
-    | CollectionShowcaseSection
-    | ProductCarouselSection
+    | HeroBannerProps
+    | CategorySectionData
     | HomeTrialSection
-    | HowItWorksStepSection
-    | TrustSection
-    | TrustItemSection
-    | EditorialSection
-    | CtaBannerSection;
+    | FeaturedJewellerySection
+    | HowItWorksSection
+    | TestimonialsSection
+    | FinalCTASectionData;
 
 // Main Homepage data structure
 export interface HomepageData {

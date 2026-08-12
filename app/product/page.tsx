@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import SiteShell from "@/app/components/site-shell";
@@ -19,7 +19,7 @@ const related = [
     { name: "Soft gold pendant", price: "From ₹16,600", image: "https://images.unsplash.com/photo-1601821765780-754fa98637c1?auto=format&fit=crop&w=900&q=80" },
 ];
 
-export default function ProductPage() {
+function ProductPageContent() {
     const searchParams = useSearchParams();
     const productId = searchParams.get("id") ?? "";
     const [product, setProduct] = useState<Product | null>(null);
@@ -127,5 +127,13 @@ export default function ProductPage() {
                 </div>
             </section>
         </SiteShell>
+    );
+}
+
+export default function ProductPage() {
+    return (
+        <Suspense fallback={<div className="p-6 text-sm text-stone-600">Loading product…</div>}>
+            <ProductPageContent />
+        </Suspense>
     );
 }

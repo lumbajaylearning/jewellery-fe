@@ -1,22 +1,6 @@
-import Image from "next/image";
-import Button from "../ui/button";
+import { HeroBannerProps } from "@/app/types/homepage";
 
-type StrapiImage = {
-    url: string;
-    alternativeText?: string | null;
-    width?: number;
-    height?: number;
-};
-
-type HeroBannerProps = {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
-    ctaText: string;
-    ctaLink: string;
-    alignment?: string | null;
-    image?: StrapiImage | null;
-};
+type HeroBannerComponentProps = Omit<HeroBannerProps, "id" | "__component">;
 
 const STRAPI_URL = process.env.STRAPI_URL!;
 
@@ -27,7 +11,7 @@ export default function HeroBanner({
     ctaText,
     ctaLink,
     image,
-}: HeroBannerProps) {
+}: HeroBannerComponentProps) {
     const imageUrl = image?.url ? `${STRAPI_URL}${image.url}` : null;
 
     return (
