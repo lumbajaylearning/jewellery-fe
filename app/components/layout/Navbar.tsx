@@ -13,8 +13,8 @@ export interface NavbarProps {
 }
 
 const DEFAULT_LINKS: NavLinkItem[] = [
-    { label: "Jewellery", href: "/jewellery" },
-    { label: "Collections", href: "/collections" },
+    { label: "Jewellery", href: "/shop" },
+    { label: "Collections", href: "/shop" },
     { label: "New Arrivals", href: "/new-arrivals" },
     { label: "Try at Home", href: "/try-at-home" },
     { label: "How It Works", href: "/how-it-works" },

@@ -1,9 +1,9 @@
+
 import ProductGrid from "@/app/components/product/ProductGrid";
 import { getProducts } from "@/app/lib/medusa/products";
 
 export default async function ShopPage() {
     const products = await getProducts();
-
     return (
         <main className="bg-background">
             <section className="mx-auto max-w-[1280px] px-6 py-16 lg:px-10">
