@@ -1,0 +1,15 @@
+services:
+  jewellery-fe:
+    container_name: jewellery-fe
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://host.docker.internal:1337
+      NEXT_PUBLIC_STRAPI_URL: http://host.docker.internal:1337
+      STRAPI_URL: http://host.docker.internal:1337
+    restart: unless-stopped
