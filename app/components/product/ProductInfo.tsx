@@ -21,6 +21,7 @@ interface ProductInfoProps {
     isWishlisted: boolean;
     onToggleWishlist: () => void;
     onScrollToReviews: () => void;
+    product: any; // Add the product prop here
 }
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
@@ -40,7 +41,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     onBuyNow,
     isWishlisted,
     onToggleWishlist,
-    onScrollToReviews
+    onScrollToReviews,
+    product
 }) => {
     const [copiedSku, setCopiedSku] = useState(false);
     const [copiedBankOffer, setCopiedBankOffer] = useState(false);
@@ -92,9 +94,11 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <div className="space-y-2.5 border-b border-[#E5DEC9] pb-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] tracking-[0.25em] uppercase font-semibold text-[#9E7D47] bg-[#F7F3EB] px-2.5 py-0.5 rounded border border-[#E5DEC9]">
-                            {PRODUCT_SPECIFICATIONS.collection}
-                        </span>
+                        {product?.collection?.title &&
+                            <span className="text-[10px] tracking-[0.25em] uppercase font-semibold text-[#9E7D47] bg-[#F7F3EB] px-2.5 py-0.5 rounded border border-[#E5DEC9]">
+                                {product.collection.title}
+                            </span>
+                        }
                         <span className="text-[10.5px] font-semibold text-[#047857] bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#A7F3D0]">
                             22KT BIS 916 Hallmark
                         </span>
@@ -115,11 +119,11 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-[#1C1917] tracking-tight leading-snug">
-                    {PRODUCT_SPECIFICATIONS.productName}
+                    {product.title}
                 </h1>
 
                 <p className="text-xs sm:text-sm text-[#57534E] leading-relaxed font-normal">
-                    An opulent blooming flower motif handcrafted in pure 22 Karat yellow gold with layered petals, matte-chased engravings, and granulated gold detailing.
+                    {product.description}
                 </p>
 
                 {/* Rating Summary & Certifications */}
@@ -214,8 +218,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                                 key={purity.id}
                                 onClick={() => onSelectPurity(purity.id)}
                                 className={`p-3 rounded text-left transition-all duration-150 cursor-pointer border flex flex-col justify-between min-h-[72px] ${isSelected
-                                        ? 'border-[#9E7D47] bg-[#FAF8F4] ring-1 ring-[#9E7D47] shadow-xs'
-                                        : 'border-[#E5DEC9] bg-[#FFFFFF] hover:bg-[#FAF8F4] hover:border-[#9E7D47]'
+                                    ? 'border-[#9E7D47] bg-[#FAF8F4] ring-1 ring-[#9E7D47] shadow-xs'
+                                    : 'border-[#E5DEC9] bg-[#FFFFFF] hover:bg-[#FAF8F4] hover:border-[#9E7D47]'
                                     }`}
                             >
                                 <div className="flex items-center justify-between w-full">
@@ -252,8 +256,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                                 key={metal.id}
                                 onClick={() => onSelectMetal(metal.id)}
                                 className={`p-3 rounded text-left transition-all duration-150 cursor-pointer border flex items-center justify-between ${isSelected
-                                        ? 'border-[#9E7D47] bg-[#FAF8F4] ring-1 ring-[#9E7D47] shadow-xs'
-                                        : 'border-[#E5DEC9] bg-[#FFFFFF] hover:bg-[#FAF8F4] hover:border-[#9E7D47]'
+                                    ? 'border-[#9E7D47] bg-[#FAF8F4] ring-1 ring-[#9E7D47] shadow-xs'
+                                    : 'border-[#E5DEC9] bg-[#FFFFFF] hover:bg-[#FAF8F4] hover:border-[#9E7D47]'
                                     }`}
                             >
                                 <div className="flex items-center gap-2">
@@ -311,8 +315,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                                 key={size}
                                 onClick={() => onSelectSize(size)}
                                 className={`py-2 text-center text-xs font-medium rounded transition-all cursor-pointer border ${isSelected
-                                        ? 'bg-[#1C1917] text-[#FAF8F4] border-[#1C1917] font-semibold shadow-xs'
-                                        : 'bg-[#FFFFFF] text-[#44403C] border-[#E5DEC9] hover:border-[#1C1917] hover:bg-[#FAF8F4]'
+                                    ? 'bg-[#1C1917] text-[#FAF8F4] border-[#1C1917] font-semibold shadow-xs'
+                                    : 'bg-[#FFFFFF] text-[#44403C] border-[#E5DEC9] hover:border-[#1C1917] hover:bg-[#FAF8F4]'
                                     }`}
                                 title={`Ring Size ${size}`}
                             >
@@ -357,8 +361,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                     <button
                         onClick={onToggleWishlist}
                         className={`py-2.5 px-4 rounded border transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 text-xs font-medium ${isWishlisted
-                                ? 'bg-[#F7F3EB] border-[#9E7D47] text-[#9E7D47]'
-                                : 'bg-[#FFFFFF] border-[#E5DEC9] text-[#44403C] hover:border-[#1C1917] hover:bg-[#FAF8F4]'
+                            ? 'bg-[#F7F3EB] border-[#9E7D47] text-[#9E7D47]'
+                            : 'bg-[#FFFFFF] border-[#E5DEC9] text-[#44403C] hover:border-[#1C1917] hover:bg-[#FAF8F4]'
                             }`}
                     >
                         <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current text-[#9E7D47]' : ''}`} />

@@ -1,4 +1,6 @@
 "use client";
+
+import { useState } from "react";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
 import { HomeTrialModal } from "@/app/components/modals/HomeTrialModal";
@@ -19,19 +21,12 @@ import { TrustFeatures } from "@/app/components/shared/TrustFeatures";
 import { TryAtHomeSection } from "@/app/components/shared/TryAtHomeSection";
 import { LIVE_GOLD_RATES, PRODUCT_SPECIFICATIONS } from "@/app/data/productData";
 import { CartItem, GoldPurity } from "@/app/types/product";
-import { useParams } from "next/dist/client/components/navigation";
-import { useState } from "react";
 
-async function fetchProduct(id: string) {
-    // Replace with your API call or database query
-    return {
-        id,
-        name: "Solitaire Diamond Ring",
-        price: "₹49,999",
-    };
+interface ProductDetailsClientProps {
+    product: any;
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
     // Product Configurator States
     const [selectedMetal, setSelectedMetal] = useState<MetalType>('yellow-gold');
     const [selectedPurity, setSelectedPurity] = useState<GoldPurity>('22K');
@@ -137,6 +132,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     return (
         <div className="w-full min-h-screen bg-background flex flex-col font-sans">
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1">
+                {/* <pre>{JSON.stringify(product, null, 2)}</pre> */}
+
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                     {/* Left Column: Product Gallery */}
                     <div className="lg:col-span-7 lg:sticky lg:top-6 self-start w-full">
@@ -169,6 +166,7 @@ export default function ProductPage({ params }: { params: { id: string } }) {
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
                             onScrollToReviews={scrollToReviews}
+                            product={product}
                         />
 
                         {/* Delivery & Pincode Checker */}

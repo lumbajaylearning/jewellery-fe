@@ -63,3 +63,13 @@ export async function getProducts() {
     return response.products.map(mapMedusaProduct);
 }
 
+
+export async function getProduct(handle: string) {
+    const { products } = await medusa.store.product.list(
+        {
+            handle,
+            fields: "*variants,*options,*categories",
+        }
+    );
+    return products[0];
+}

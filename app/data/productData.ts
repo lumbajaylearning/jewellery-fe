@@ -1,4 +1,4 @@
-import { MetalOption, PurityOption, ProductImage, ReviewItem, RelatedProduct, PincodeInfo, PriceBreakdownData } from '../types';
+import { MetalOption, PurityOption, ProductImage, ReviewItem, RelatedProduct, PincodeInfo, PriceBreakdownData } from '@/app/types/product';
 
 export const LIVE_GOLD_RATES = {
   '24K': 8565,
