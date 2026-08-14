@@ -8,6 +8,9 @@ export const revalidate = 3600;
 export default async function Home() {
   const homepage = await getHomepage();
 
-  return <DynamicZone sections={homepage.data.sections} />;
+  return (
+    <main className="w-full max-w-7xl px-5">
+      <DynamicZone sections={homepage.data.sections} />;
+    </main>)
 }
 

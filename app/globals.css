@@ -61,19 +61,40 @@ h4 {
   font-family: var(--font-heading);
 }
 
-/* :root {
---color-background: #FAF8F4;
---color-surface: #F1ECE4;
-
---color-text-primary: #252525;
---color-text-secondary: #6F6B65;
-
---color-primary: #33251D;
---color-gold: #B89B5E;
-
---color-border: #E5DED3;
-
---color-white: #FFFFFF;
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-*/
+::-webkit-scrollbar-track {
+  background: #FAF8F4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D8CEBE;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B8AFA0;
+}
+
+/* Luxury micro-interactions */
+.gold-glow {
+  box-shadow: 0 4px 20px rgba(197, 168, 128, 0.2);
+}
+
+.luxury-border {
+  border-color: #E5DEC9;
+}
+
+/* Hide scrollbar for clean carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

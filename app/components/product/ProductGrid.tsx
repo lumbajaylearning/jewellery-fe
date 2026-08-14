@@ -1,8 +1,8 @@
 import ProductCard from "./ProductCard";
-import type { StoreProduct } from "@/app/types/product";
+import type { ShopProduct } from "@/app/types/product";
 
 type ProductGridProps = {
-    products: StoreProduct[];
+    products: ShopProduct[];
 };
 
 export default function ProductGrid({

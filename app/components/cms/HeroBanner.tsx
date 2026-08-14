@@ -74,6 +74,7 @@ export default function HeroBanner({
                         unoptimized
                         sizes="(max-width: 768px) 100vw, 48vw"
                         className="object-cover"
+                        fetchPriority="high"
                     />
                 )}
             </div>

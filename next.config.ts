@@ -34,6 +34,16 @@ const nextConfig: NextConfig = {
         port: "9000",
         pathname: "/static/**",
       },
+      {
+        protocol: 'https',
+        hostname: 'strapi.navloka.in',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'medusa.navloka.in',
+        pathname: '/static/**',
+      },
     ],
   },
 };

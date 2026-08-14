@@ -37,7 +37,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col items-center justify-between ">
         <AnnouncementBar {...siteSettings.data.announcementBar} />
         <Navbar />
-        <main className="w-full max-w-7xl px-5">{children}</main>
+        {children}
         <Footer {...siteSettings.data.footer} />
       </body>
     </html>

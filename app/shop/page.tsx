@@ -5,7 +5,8 @@ import { getProducts } from "@/app/lib/medusa/products";
 export default async function ShopPage() {
     const products = await getProducts();
     return (
-        <main className="bg-background">
+        <main className="w-full max-w-7xl bg-background">
+
             <section className="mx-auto max-w-[1280px] px-6 py-16 lg:px-10">
                 <div className="mb-10 text-center">
                     <p className="font-body text-xs uppercase tracking-[0.15em] text-gold">

@@ -23,7 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     return (
         <article className="group relative w-full max-w-[280px]">
-            <Link href={`/shop/${product.handle}`} className="block">
+            <Link href={`/product/${product.handle}`} className="block">
                 {/* Image Container */}
                 <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-100 shadow-sm transition-shadow duration-300 group-hover:shadow-md">
                     {primaryImage ? (
