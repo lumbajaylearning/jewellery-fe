@@ -151,9 +151,9 @@ export default function CartPage() {
                             <div className="flex justify-between"><span>Taxes</span><span>Calculated at checkout</span></div>
                         </div>
                         <div className="flex justify-between py-5 font-semibold text-text-primary"><span>Total</span><span className="font-heading text-xl">{formatMoney(total, currencyCode)}</span></div>
-                        <button className="w-full rounded bg-text-primary px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-white">
+                        <Link href="/checkout" className="block w-full rounded bg-text-primary px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-white">
                             Proceed to checkout
-                        </button>
+                        </Link>
                         <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />Secure Medusa checkout</div>
                         <Link href="/book" className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-border bg-white px-4 py-3 text-xs font-semibold text-text-primary">
                             <Sparkles className="h-4 w-4 text-gold" />Prefer a home trial?
