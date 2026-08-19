@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { X, ShoppingBag, Trash2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { CartItem } from '@/app/types/product';
 
@@ -155,13 +156,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={() => alert('Proceeding to Secure Insured Checkout with 256-Bit SSL Protection.')}
+            <Link
+              href="/cart"
+              onClick={onClose}
               className="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAF8F4] py-3.5 rounded text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
             >
               <span>Proceed to Secure Checkout</span>
               <ArrowRight className="w-4 h-4 text-[#FAF8F4]" />
-            </button>
+            </Link>
 
             <div className="flex items-center justify-center gap-2 text-[10.5px] text-[#78716C]">
               <ShieldCheck className="w-3.5 h-3.5 text-[#047857]" />
