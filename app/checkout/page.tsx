@@ -12,7 +12,11 @@ import {
     setCartShippingMethod,
     updateCartDetails,
 } from "@/app/lib/medusa/cart";
-import { listCustomerAddresses } from "@/app/lib/medusa/customer";
+import {
+    createCustomerAddress,
+    listCustomerAddresses,
+    updateCustomerAddress,
+} from "@/app/lib/medusa/customer";
 
 const initialAddress = {
     first_name: "",
@@ -44,6 +48,9 @@ export default function CheckoutPage() {
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
     const [addressFormOpen, setAddressFormOpen] = useState(true);
+    const [addressConfirmed, setAddressConfirmed] = useState(false);
+    const [customerAuthenticated, setCustomerAuthenticated] = useState(false);
+    const [addressSaving, setAddressSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -81,6 +88,7 @@ export default function CheckoutPage() {
                 setSelectedShippingId(dataCart.shipping_methods?.[0]?.shipping_option_id ?? options[0]?.id ?? "");
                 listCustomerAddresses().then((addresses) => {
                     if (!active) return;
+                    setCustomerAuthenticated(true);
                     setSavedAddresses(addresses);
                     if (addresses.length > 0) {
                         const selectedAddress = addresses.find((item: any) => item.is_default_shipping) ?? addresses[0];
@@ -96,6 +104,7 @@ export default function CheckoutPage() {
                             country_code: selectedAddress.country_code ?? "in",
                             phone: selectedAddress.phone ?? "",
                         });
+                        setAddressConfirmed(true);
                         setAddressFormOpen(false);
                     }
                 }).catch(() => undefined);
@@ -132,13 +141,74 @@ export default function CheckoutPage() {
             country_code: savedAddress.country_code ?? "in",
             phone: savedAddress.phone ?? "",
         });
+        setAddressConfirmed(true);
         setAddressFormOpen(false);
+        setError(null);
     };
 
     const useDifferentAddress = () => {
         setSelectedSavedAddressId(null);
         setAddress(initialAddress);
+        setAddressConfirmed(false);
         setAddressFormOpen(true);
+        setError(null);
+    };
+
+    const validateAddress = () => {
+        const requiredFields: Array<keyof typeof initialAddress> = [
+            "first_name", "last_name", "address_1", "city", "province", "postal_code", "phone",
+        ];
+        if (requiredFields.some((field) => !address[field].trim())) {
+            setError("Complete all required address fields before continuing.");
+            return false;
+        }
+        if (!/^[0-9]{6}$/.test(address.postal_code)) {
+            setError("Enter a valid 6-digit PIN code.");
+            return false;
+        }
+        return true;
+    };
+
+    const confirmAddressForOrder = () => {
+        if (!validateAddress()) return;
+        setAddressConfirmed(true);
+        setAddressFormOpen(false);
+        setError(null);
+    };
+
+    const saveAddress = async () => {
+        if (!validateAddress() || addressSaving) return;
+        setAddressSaving(true);
+        setError(null);
+        try {
+            let addresses: any[];
+            if (selectedSavedAddressId) {
+                const selectedAddress = savedAddresses.find((item) => item.id === selectedSavedAddressId);
+                addresses = await updateCustomerAddress(selectedSavedAddressId, {
+                    ...address,
+                    address_name: selectedAddress?.address_name || "Saved address",
+                    is_default_shipping: selectedAddress?.is_default_shipping ?? false,
+                    is_default_billing: selectedAddress?.is_default_billing ?? false,
+                });
+            } else {
+                addresses = await createCustomerAddress({
+                    ...address,
+                    address_name: "Saved address",
+                });
+            }
+
+            setSavedAddresses(addresses);
+            const savedAddress = selectedSavedAddressId
+                ? addresses.find((item) => item.id === selectedSavedAddressId)
+                : addresses.find((item) => item.address_1 === address.address_1 && item.postal_code === address.postal_code);
+            if (savedAddress) setSelectedSavedAddressId(savedAddress.id);
+            setAddressConfirmed(true);
+            setAddressFormOpen(false);
+        } catch (caughtError) {
+            setError(caughtError instanceof Error ? caughtError.message : "Unable to save this address.");
+        } finally {
+            setAddressSaving(false);
+        }
     };
 
     const handlePlaceOrder = async (event: React.FormEvent) => {
@@ -194,7 +264,7 @@ export default function CheckoutPage() {
                         <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-text-primary text-xs font-semibold text-white">1</span><h2 className="font-heading text-2xl text-text-primary">Contact details</h2></div>
                         <label className="mt-6 block text-xs font-semibold text-text-primary">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" placeholder="you@example.com" /></label>
                         {savedAddresses.length > 0 && <div className="mt-6"><p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Saved addresses</p><div className="mt-3 flex gap-3 overflow-x-auto pb-2">{savedAddresses.map((savedAddress) => <button key={savedAddress.id} type="button" onClick={() => selectSavedAddress(savedAddress)} className={`min-w-52 rounded border p-3 text-left text-xs text-text-secondary ${selectedSavedAddressId === savedAddress.id && !addressFormOpen ? "border-gold bg-surface ring-1 ring-gold" : "border-border bg-white hover:border-gold"}`}><span className="flex items-center justify-between font-semibold text-text-primary"><span>{savedAddress.address_name || "Saved address"}</span>{selectedSavedAddressId === savedAddress.id && !addressFormOpen && <Check className="h-3.5 w-3.5 text-gold" />}</span><span className="mt-1 block truncate">{savedAddress.address_1}, {savedAddress.city}</span></button>)}</div></div>}
-                        {!addressFormOpen && selectedSavedAddressId && <div className="mt-5 rounded border border-gold bg-surface p-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-text-primary">{address.first_name} {address.last_name}</p><p className="mt-1 text-sm leading-6 text-text-secondary">{address.address_1}{address.address_2 ? `, ${address.address_2}` : ""}<br />{address.city}, {address.province} {address.postal_code}<br />{address.phone}</p></div><Check className="h-5 w-5 flex-shrink-0 text-emerald-700" /></div><div className="mt-4 flex flex-wrap gap-4 border-t border-border pt-3"><button type="button" onClick={() => setAddressFormOpen(true)} className="text-xs font-semibold text-text-primary">Edit for this order</button><button type="button" onClick={useDifferentAddress} className="text-xs font-semibold text-gold">Use a different address</button></div></div>}
+                        {!addressFormOpen && addressConfirmed && <div className="mt-5 rounded border border-gold bg-surface p-4"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold text-text-primary">{address.first_name} {address.last_name}</p><p className="mt-1 text-sm leading-6 text-text-secondary">{address.address_1}{address.address_2 ? `, ${address.address_2}` : ""}<br />{address.city}, {address.province} {address.postal_code}<br />{address.phone}</p></div><Check className="h-5 w-5 flex-shrink-0 text-emerald-700" /></div><div className="mt-4 flex flex-wrap gap-4 border-t border-border pt-3"><button type="button" onClick={() => { setAddressConfirmed(false); setAddressFormOpen(true); }} className="text-xs font-semibold text-text-primary">Edit address</button><button type="button" onClick={useDifferentAddress} className="text-xs font-semibold text-gold">Use a different address</button></div></div>}
                         {addressFormOpen && <div className="mt-6 grid gap-4 sm:grid-cols-2">
                             <label className="text-xs font-semibold text-text-primary">First name<input required value={address.first_name} onChange={(event) => handleAddressChange("first_name", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>
                             <label className="text-xs font-semibold text-text-primary">Last name<input required value={address.last_name} onChange={(event) => handleAddressChange("last_name", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>
@@ -204,7 +274,11 @@ export default function CheckoutPage() {
                             <label className="text-xs font-semibold text-text-primary">State<input required value={address.province} onChange={(event) => handleAddressChange("province", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" placeholder="Uttar Pradesh" /></label>
                             <label className="text-xs font-semibold text-text-primary">PIN code<input required inputMode="numeric" pattern="[0-9]{6}" value={address.postal_code} onChange={(event) => handleAddressChange("postal_code", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>
                             <label className="text-xs font-semibold text-text-primary">Phone<input required type="tel" value={address.phone} onChange={(event) => handleAddressChange("phone", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>
-                            {savedAddresses.length > 0 && <div className="sm:col-span-2 flex justify-end"><button type="button" onClick={() => selectSavedAddress(savedAddresses.find((item) => item.id === selectedSavedAddressId) ?? savedAddresses.find((item) => item.is_default_shipping) ?? savedAddresses[0])} className="text-xs font-semibold text-text-secondary">Cancel</button></div>}
+                            <div className="sm:col-span-2 flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+                                {savedAddresses.length > 0 && <button type="button" disabled={addressSaving} onClick={() => selectSavedAddress(savedAddresses.find((item) => item.id === selectedSavedAddressId) ?? savedAddresses.find((item) => item.is_default_shipping) ?? savedAddresses[0])} className="px-3 py-2 text-xs font-semibold text-text-secondary disabled:opacity-50">Cancel</button>}
+                                <button type="button" disabled={addressSaving} onClick={confirmAddressForOrder} className="rounded border border-text-primary px-4 py-2.5 text-xs font-semibold text-text-primary disabled:opacity-50">Use for this order</button>
+                                {customerAuthenticated && <button type="button" disabled={addressSaving} onClick={saveAddress} className="rounded bg-text-primary px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{addressSaving ? "Saving…" : selectedSavedAddressId ? "Update saved address" : "Save and use address"}</button>}
+                            </div>
                         </div>}
                     </section>
 
