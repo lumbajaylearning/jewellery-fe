@@ -1,7 +1,6 @@
 import React from 'react';
-import { Heart, ShoppingBag, Sparkles, Zap } from 'lucide-react';
+import { Heart, ShoppingBag, Sparkles } from 'lucide-react';
 import { MetalType, GoldPurity } from '@/app/types/product';
-import { LIVE_GOLD_RATES } from '@/app/data/productData';
 
 interface MobileStickyBarProps {
   isWishlisted: boolean;
@@ -26,13 +25,7 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
   price,
   disabled = false,
 }) => {
-  const rate = LIVE_GOLD_RATES[selectedPurity] || 7850;
-  const netWeight = 1.890;
-  const goldVal = Math.round(netWeight * rate);
-  const makingCharges = Math.round(goldVal * 0.28);
-  const makingDiscount = Math.round(makingCharges * 0.15);
-  const subtotal = goldVal + (makingCharges - makingDiscount);
-  const finalPrice = price ?? (subtotal + Math.round(subtotal * 0.03));
+  const finalPrice = price ?? 0;
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F4]/95 backdrop-blur-md border-t border-[#E5DEC9] p-3 shadow-2xl lg:hidden">
@@ -69,7 +62,7 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
             <span>Add to Bag</span>
           </span>
           <span className="font-serif font-bold text-xs text-[#FAF8F4]">
-            ₹{finalPrice.toLocaleString('en-IN')}
+            {finalPrice ? `₹${finalPrice.toLocaleString('en-IN')}` : 'Unavailable'}
           </span>
         </button>
       </div>

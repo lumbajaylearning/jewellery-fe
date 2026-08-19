@@ -15,11 +15,9 @@ import { PriceBreakdown } from "@/app/components/product/PriceBreakdown";
 import { ProductDetailsAccordion } from "@/app/components/product/ProductDetailsAccordion";
 import { MetalType, ProductGallery } from "@/app/components/product/ProductGallery";
 import { ProductInfo } from "@/app/components/product/ProductInfo";
-import { CustomerReviews } from "@/app/components/shared/CustomerReviews";
 import { DeliveryChecker } from "@/app/components/shared/DeliveryChecker";
 import { TrustFeatures } from "@/app/components/shared/TrustFeatures";
 import { TryAtHomeSection } from "@/app/components/shared/TryAtHomeSection";
-import { LIVE_GOLD_RATES } from "@/app/data/productData";
 import { CartItem, GoldPurity } from "@/app/types/product";
 import { addToCart, getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
 import { addHomeTrialItem } from "@/app/lib/home-trial";
@@ -74,15 +72,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     const [priceBreakupModalOpen, setPriceBreakupModalOpen] = useState(false);
     const [storeModalOpen, setStoreModalOpen] = useState(false);
 
-    // Dynamic price calculation
-    const currentRate = LIVE_GOLD_RATES[selectedPurity] || 7850;
-    const netWeight = 1.890;
-    const goldVal = Math.round(netWeight * currentRate);
-    const makingCharges = Math.round(goldVal * 0.28);
-    const makingDiscount = Math.round(makingCharges * 0.15);
-    const subtotal = goldVal + (makingCharges - makingDiscount);
-    const currentProductPrice = subtotal + Math.round(subtotal * 0.03);
-
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {}
         product.options?.forEach((option: any) => {
@@ -106,7 +95,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
     const price = selectedVariant?.calculated_price?.calculated_amount
         ?? product.variants?.[0]?.calculated_price?.calculated_amount
-        ?? currentProductPrice;
+        ?? 0;
     const selectedVariantInStock = selectedVariant && (
         selectedVariant.manage_inventory === false ||
         selectedVariant.inventory_quantity == null ||
@@ -181,11 +170,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
         showToast(result.added ? `Added ${product.title} to Wishlist` : `Removed ${product.title} from Wishlist`);
     };
 
-    const scrollToReviews = () => {
-        const el = document.getElementById('customer-reviews');
-        el?.scrollIntoView({ behavior: 'smooth' });
-    };
-
     return (
         <div className="w-full min-h-screen bg-background flex flex-col font-sans">
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full flex-1">
@@ -224,7 +208,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                             onBuyNow={handleBuyNow}
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
-                            onScrollToReviews={scrollToReviews}
+                            onScrollToReviews={() => undefined}
                             product={product}
                             selectedVariant={selectedVariant}
                             selectedOptions={selectedOptions}
@@ -251,26 +235,26 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
                 {/* Trust Indicators Bar */}
                 <div className="mt-8">
-                    <TrustFeatures onOpenCertificateModal={() => setCertificateModalOpen(true)} />
+                    <TrustFeatures product={product} onOpenCertificateModal={() => setCertificateModalOpen(true)} />
                 </div>
 
                 {/* Detailed Product Specifications Accordion & Transparent Pricing */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-8 items-start">
                     <div className="lg:col-span-7">
                         <ProductDetailsAccordion
+                            product={product}
+                            selectedVariant={selectedVariant}
                             onOpenCertificateModal={() => setCertificateModalOpen(true)}
                             onOpenExchangeModal={() => setExchangeModalOpen(true)}
                         />
                     </div>
 
                     <div id="price-breakdown-section" className="lg:col-span-5">
-                        <PriceBreakdown selectedPurity={selectedPurity} />
+                        <PriceBreakdown product={product} selectedVariant={selectedVariant} selectedPurity={selectedPurity} />
                     </div>
                 </div>
 
             </main>
-            {/* Customer Stories Section */}
-            <CustomerReviews />
             <MobileStickyBar
                 isWishlisted={isWishlisted}
                 onToggleWishlist={handleToggleWishlist}
@@ -334,6 +318,8 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
             <PriceBreakupModal
                 isOpen={priceBreakupModalOpen}
                 onClose={() => setPriceBreakupModalOpen(false)}
+                product={product}
+                selectedVariant={selectedVariant}
                 selectedPurity={selectedPurity}
             />
 

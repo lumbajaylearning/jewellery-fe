@@ -22,9 +22,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     const primaryImage = product.thumbnail || sortedImages[0]?.url;
     const hoverImage = sortedImages[1]?.url || primaryImage;
 
-    // Fallback dummy values
     const price = product.price.formatted;
-    const details = "18K Gold · Diamond";
+    const details = product.description || `${product.variants.length} ${product.variants.length === 1 ? "variant" : "variants"}`;
 
     return (
         <article className="group relative w-full max-w-[280px]">
@@ -101,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                         </span>
                     </div>
 
-                    <p className="text-xs font-normal tracking-wide text-neutral-500">
+                    <p className="truncate text-xs font-normal tracking-wide text-neutral-500">
                         {details}
                     </p>
                 </div>
