@@ -51,6 +51,10 @@ export default function CartPage() {
         (sum: number, item: any) => sum + (item.unit_price ?? 0) * item.quantity,
         0
     );
+    const discountTotal = cart?.discount_total ?? 0;
+    const shippingTotal = cart?.shipping_total ?? 0;
+    const taxTotal = cart?.tax_total ?? 0;
+    const hasShippingMethod = Boolean(cart?.shipping_methods?.length);
     const total = cart?.total ?? subtotal;
 
     const updateQuantity = async (lineItemId: string, quantity: number) => {
@@ -135,7 +139,7 @@ export default function CartPage() {
                                         <h2 className="mt-2 font-heading text-xl text-text-primary sm:text-2xl">{item.product_title ?? item.title}</h2>
                                         {item.variant_sku && <p className="mt-2 text-xs text-text-secondary">SKU: {item.variant_sku}</p>}
                                         <p className="mt-4 font-heading text-lg font-semibold text-text-primary sm:hidden">
-                                            {formatMoney((item.unit_price ?? 0) * item.quantity, currencyCode)}
+                                            {formatMoney(item.total ?? (item.unit_price ?? 0) * item.quantity, currencyCode)}
                                         </p>
                                         <div className="mt-5 flex flex-wrap items-center gap-4">
                                             <div className="flex items-center rounded border border-border bg-surface">
@@ -149,7 +153,7 @@ export default function CartPage() {
                                         </div>
                                     </div>
                                     <p className="hidden font-heading text-lg font-semibold text-text-primary sm:block">
-                                        {formatMoney((item.unit_price ?? 0) * item.quantity, currencyCode)}
+                                        {formatMoney(item.total ?? (item.unit_price ?? 0) * item.quantity, currencyCode)}
                                     </p>
                                 </article>
                             );
@@ -160,8 +164,9 @@ export default function CartPage() {
                         <h2 className="font-heading text-2xl text-text-primary">Order summary</h2>
                         <div className="mt-6 space-y-3 border-b border-border pb-5 text-sm text-text-secondary">
                             <div className="flex justify-between"><span>Subtotal</span><span className="font-medium text-text-primary">{formatMoney(subtotal, currencyCode)}</span></div>
-                            <div className="flex justify-between"><span>Insured shipping</span><span className="font-semibold text-emerald-700">Free</span></div>
-                            <div className="flex justify-between"><span>Taxes</span><span>Calculated at checkout</span></div>
+                            {discountTotal > 0 && <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{formatMoney(discountTotal, currencyCode)}</span></div>}
+                            <div className="flex justify-between"><span>Shipping</span><span>{hasShippingMethod ? formatMoney(shippingTotal, currencyCode) : "Calculated at checkout"}</span></div>
+                            <div className="flex justify-between"><span>Taxes</span><span>{taxTotal > 0 ? formatMoney(taxTotal, currencyCode) : "Calculated at checkout"}</span></div>
                         </div>
                         <div className="flex justify-between py-5 font-semibold text-text-primary"><span>Total</span><span className="font-heading text-xl">{formatMoney(total, currencyCode)}</span></div>
                         <Link href="/checkout" className="block w-full rounded bg-text-primary px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-white">

@@ -85,7 +85,13 @@ export default function CheckoutPage() {
                 const options = await listCartShippingOptions(dataCart.id);
                 if (!active) return;
                 setShippingOptions(options);
-                setSelectedShippingId(dataCart.shipping_methods?.[0]?.shipping_option_id ?? options[0]?.id ?? "");
+                const existingShippingId = dataCart.shipping_methods?.[0]?.shipping_option_id;
+                const initialShippingId = existingShippingId ?? options[0]?.id ?? "";
+                setSelectedShippingId(initialShippingId);
+                if (!existingShippingId && initialShippingId) {
+                    const cartWithShipping = await setCartShippingMethod(initialShippingId);
+                    if (active) setCart(cartWithShipping);
+                }
                 listCustomerAddresses().then((addresses) => {
                     if (!active) return;
                     setCustomerAuthenticated(true);
@@ -287,7 +293,7 @@ export default function CheckoutPage() {
                         <div className="mt-6 space-y-3">
                             {shippingOptions.length > 0 ? shippingOptions.map((option) => (
                                 <label key={option.id} className={`flex cursor-pointer flex-col gap-3 rounded border p-4 sm:flex-row sm:items-center sm:justify-between ${selectedShippingId === option.id ? "border-gold bg-surface" : "border-border"}`}>
-                                    <span className="flex min-w-0 items-center gap-3"><input className="flex-none" type="radio" name="shipping" value={option.id} checked={selectedShippingId === option.id} onChange={() => setSelectedShippingId(option.id)} /><span className="min-w-0"><span className="block text-sm font-semibold text-text-primary">{option.name}</span><span className="mt-1 block text-xs text-text-secondary">Insured delivery with tracking</span></span></span>
+                                    <span className="flex min-w-0 items-center gap-3"><input className="flex-none" type="radio" name="shipping" value={option.id} checked={selectedShippingId === option.id} onChange={async () => { setSelectedShippingId(option.id); setError(null); try { setCart(await setCartShippingMethod(option.id)); } catch (caughtError) { setError(caughtError instanceof Error ? caughtError.message : "Unable to select this shipping method."); } }} /><span className="min-w-0"><span className="block text-sm font-semibold text-text-primary">{option.name}</span><span className="mt-1 block text-xs text-text-secondary">Configured in Medusa</span></span></span>
                                     <span className="pl-7 text-sm font-semibold text-text-primary sm:pl-0">{option.amount ? formatMoney(option.amount, cart?.currency_code) : "Free"}</span>
                                 </label>
                             )) : <p className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">No shipping method is configured for this cart. Add a shipping option to the Medusa region.</p>}
@@ -295,7 +301,7 @@ export default function CheckoutPage() {
                     </section>
 
                     <section className="min-w-0 rounded border border-gold bg-surface p-4 sm:p-7">
-                        <div className="flex items-start gap-3 sm:gap-4"><span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-text-primary text-white"><Check className="h-4 w-4" /></span><div className="min-w-0"><h2 className="font-heading text-2xl text-text-primary">Cash on Delivery</h2><p className="mt-2 text-sm leading-6 text-text-secondary">Pay when your insured jewellery delivery arrives. The order will use Medusa’s system payment provider.</p></div></div>
+                        <div className="flex items-start gap-3 sm:gap-4"><span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full bg-text-primary text-white"><Check className="h-4 w-4" /></span><div className="min-w-0"><h2 className="font-heading text-2xl text-text-primary">Cash on Delivery</h2><p className="mt-2 text-sm leading-6 text-text-secondary">Pay when the order is delivered. Checkout uses the Medusa system payment provider configured for COD.</p></div></div>
                     </section>
                 </div>
 
@@ -304,13 +310,13 @@ export default function CheckoutPage() {
                     <p className="mt-1 text-xs text-text-secondary">{itemCount} {itemCount === 1 ? "piece" : "pieces"}</p>
                     <div className="mt-5 max-h-72 space-y-4 overflow-y-auto border-y border-border py-5">
                         {cart?.items?.map((item: any) => (
-                            <div key={item.id} className="flex min-w-0 gap-3"><div className="h-16 w-14 flex-none overflow-hidden rounded bg-white">{item.thumbnail && <img src={item.thumbnail} alt={item.product_title} className="h-full w-full object-cover" />}</div><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-text-primary">{item.product_title}</p><p className="mt-1 truncate text-[11px] text-text-secondary">{item.variant_title} × {item.quantity}</p></div><p className="flex-none text-xs font-semibold text-text-primary">{formatMoney((item.unit_price ?? 0) * item.quantity, cart.currency_code)}</p></div>
+                            <div key={item.id} className="flex min-w-0 gap-3"><div className="h-16 w-14 flex-none overflow-hidden rounded bg-white">{item.thumbnail && <img src={item.thumbnail} alt={item.product_title} className="h-full w-full object-cover" />}</div><div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold text-text-primary">{item.product_title}</p><p className="mt-1 truncate text-[11px] text-text-secondary">{item.variant_title} × {item.quantity}</p></div><p className="flex-none text-xs font-semibold text-text-primary">{formatMoney(item.total ?? (item.unit_price ?? 0) * item.quantity, cart.currency_code)}</p></div>
                         ))}
                     </div>
-                    <div className="space-y-3 py-5 text-sm text-text-secondary"><div className="flex justify-between"><span>Subtotal</span><span className="text-text-primary">{formatMoney(cart?.subtotal ?? 0, cart?.currency_code)}</span></div><div className="flex justify-between"><span>Shipping</span><span className="text-text-primary">Calculated by Medusa</span></div><div className="flex justify-between border-t border-border pt-4 font-semibold text-text-primary"><span>Total</span><span className="font-heading text-xl">{formatMoney(cart?.total ?? cart?.subtotal ?? 0, cart?.currency_code)}</span></div></div>
+                    <div className="space-y-3 py-5 text-sm text-text-secondary"><div className="flex justify-between"><span>Subtotal</span><span className="text-text-primary">{formatMoney(cart?.subtotal ?? 0, cart?.currency_code)}</span></div>{cart?.discount_total > 0 && <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{formatMoney(cart.discount_total, cart.currency_code)}</span></div>}<div className="flex justify-between"><span>Shipping</span><span className="text-text-primary">{selectedShippingId ? formatMoney(cart?.shipping_total ?? 0, cart?.currency_code) : "Select a method"}</span></div>{cart?.tax_total > 0 && <div className="flex justify-between"><span>Taxes</span><span className="text-text-primary">{formatMoney(cart.tax_total, cart.currency_code)}</span></div>}<div className="flex justify-between border-t border-border pt-4 font-semibold text-text-primary"><span>Total</span><span className="font-heading text-xl">{formatMoney(cart?.total ?? cart?.subtotal ?? 0, cart?.currency_code)}</span></div></div>
                     <button disabled={submitting || !selectedShippingId} className="w-full rounded bg-text-primary px-5 py-4 text-xs font-semibold uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-50">{submitting ? "Placing order…" : "Place COD order"}</button>
                     <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />Secure Medusa order</div>
-                    <div className="mt-5 grid grid-cols-2 gap-3 text-center text-[10px] text-text-secondary"><span className="rounded border border-border bg-white p-3"><Truck className="mx-auto mb-1.5 h-4 w-4 text-gold" />Insured shipping</span><span className="rounded border border-border bg-white p-3"><PackageCheck className="mx-auto mb-1.5 h-4 w-4 text-gold" />Verified delivery</span></div>
+                    <div className="mt-5 grid grid-cols-2 gap-3 text-center text-[10px] text-text-secondary"><span className="rounded border border-border bg-white p-3"><Truck className="mx-auto mb-1.5 h-4 w-4 text-gold" />Medusa shipping</span><span className="rounded border border-border bg-white p-3"><PackageCheck className="mx-auto mb-1.5 h-4 w-4 text-gold" />COD order</span></div>
                 </aside>
             </form>
         </main>

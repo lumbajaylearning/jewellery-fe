@@ -1,6 +1,6 @@
+import Link from "next/link";
 import React from "react";
 
-// --- Types based on your Strapi API response ---
 export interface FooterLink {
     id: number;
     label?: string | null;
@@ -29,6 +29,26 @@ const DEFAULT_LEGAL_LINKS = [
     { label: "Terms", url: "/terms" },
 ];
 
+function normalizeHref(value?: string | null) {
+    const href = value?.trim();
+    if (!href) return "#";
+    if (/^(https?:\/\/|mailto:|tel:|#)/i.test(href)) return href;
+    const internalHref = href.startsWith("/") ? href : `/${href}`;
+    const [, pathname = internalHref, suffix = ""] = internalHref.match(/^([^?#]*)(.*)$/) ?? [];
+    return `${pathname.toLowerCase()}${suffix}`;
+}
+
+function FooterAnchor({ href, newTab, children, className }: { href: string; newTab?: boolean | null; children: React.ReactNode; className: string }) {
+    const normalizedHref = normalizeHref(href);
+    const external = /^(https?:\/\/|mailto:|tel:)/i.test(normalizedHref);
+
+    if (external || newTab) {
+        return <a href={normalizedHref} target={newTab ? "_blank" : undefined} rel={newTab ? "noopener noreferrer" : undefined} className={className}>{children}</a>;
+    }
+
+    return <Link href={normalizedHref} className={className}>{children}</Link>;
+}
+
 export const Footer: React.FC<FooterProps> = ({
     brandName = "AURUM",
     brandDescription,
@@ -36,79 +56,50 @@ export const Footer: React.FC<FooterProps> = ({
     columns = [],
     legalLinks = DEFAULT_LEGAL_LINKS,
 }) => {
+    const visibleColumns = columns.filter((column) => column.links?.some((link) => link.label && link.url));
+
     return (
-        <footer className="w-full flex flex-col items-center bg-primary border-t border-gray-100 pt-12 pb-8 md:pt-16 md:pb-12 text-center md:text-left">
-            <div className="w-full max-w-7xl px-5">
-
-                {/* Top Grid: Brand info & Dynamic Navigation Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-12 pb-12">
-
-                    {/* Brand Info (Left Column on Desktop) */}
-                    <div className="md:col-span-5 space-y-3 flex flex-col items-center md:items-start">
-                        <a
-                            href="/"
-                            className="font-serif text-2xl font-normal tracking-widest text-gray uppercase"
-                        >
+        <footer className="w-full bg-[#D9B37A] text-[#181818]">
+            <div className="mx-auto w-full max-w-[1856px] px-6 py-14 sm:px-10 sm:py-16 lg:px-16 lg:pb-14 lg:pt-24">
+                <div className="grid grid-cols-1 gap-12 pb-14 text-center md:grid-cols-12 md:gap-10 md:text-left lg:pb-16">
+                    <div className="flex flex-col items-center md:col-span-5 md:items-start">
+                        <Link href="/" className="font-heading text-3xl font-medium uppercase tracking-[0.12em] text-[#181818] transition-opacity hover:opacity-70 sm:text-4xl">
                             {brandName}
-                        </a>
-                        {brandDescription && (
-                            <p className="text-xs md:text-sm text-gray leading-relaxed max-w-sm whitespace-pre-line">
-                                {brandDescription.trim()}
-                            </p>
-                        )}
+                        </Link>
+                        {brandDescription && <p className="mt-5 max-w-sm whitespace-pre-line text-sm leading-7 text-[#24211D] sm:text-base">{brandDescription.trim()}</p>}
                     </div>
 
-                    {/* Dynamic Link Columns (Right Side Grid) */}
-                    <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8">
-                        {columns.map((column) => (
-                            <div key={column.id} className="space-y-3">
-                                {/* Column Title */}
-                                <h4 className="text-xs font-semibold uppercase tracking-widest text-gray">
+                    <nav aria-label="Footer navigation" className="grid grid-cols-1 gap-10 sm:grid-cols-3 md:col-span-7 md:gap-8">
+                        {visibleColumns.map((column) => (
+                            <section key={column.id} aria-labelledby={`footer-column-${column.id}`}>
+                                <h2 id={`footer-column-${column.id}`} className="font-heading text-xs font-semibold uppercase tracking-[0.18em] text-[#181818]">
                                     {column.title}
-                                </h4>
-
-                                {/* Column Links List */}
-                                <ul className="space-y-2.5">
-                                    {column.links
-                                        .filter((link) => link.label && link.url)
-                                        .map((link) => (
-                                            <li key={link.id}>
-                                                <a
-                                                    href={link.url || "#"}
-                                                    target={link.openInNewTab ? "_blank" : "_self"}
-                                                    rel={link.openInNewTab ? "noopener noreferrer" : undefined}
-                                                    className="text-xs md:text-sm text-gray hover:text-black transition-colors"
-                                                >
-                                                    {link.label}
-                                                </a>
-                                            </li>
-                                        ))}
+                                </h2>
+                                <ul className="mt-6 space-y-5">
+                                    {column.links.filter((link) => link.label && link.url).map((link) => (
+                                        <li key={link.id}>
+                                            <FooterAnchor href={link.url!} newTab={link.openInNewTab} className="text-xs md:text-sm text-[#181818] transition-opacity hover:opacity-60 sm:text-base ">
+                                                {link.label}
+                                            </FooterAnchor>
+                                        </li>
+                                    ))}
                                 </ul>
-                            </div>
+                            </section>
                         ))}
-                    </div>
-
+                    </nav>
                 </div>
 
-                {/* Bottom Bar: Copyright & Legal Links */}
-                <div className="pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray">
+                <div className="flex flex-col items-center justify-between gap-5 border-t border-[#E8D9C2] pt-8 text-xs text-[#181818] sm:flex-row sm:text-sm lg:pt-10">
                     <p>{copyright}</p>
-
-                    <div className="flex items-center space-x-4">
-                        {legalLinks.map((item, idx) => (
-                            <React.Fragment key={idx}>
-                                <a
-                                    href={item.url}
-                                    className="hover:text-black transition-colors"
-                                >
-                                    {item.label}
-                                </a>
-                                {idx < legalLinks.length - 1 && <span>·</span>}
+                    <nav aria-label="Legal" className="flex items-center gap-4">
+                        {legalLinks.map((item, index) => (
+                            <React.Fragment key={`${item.label}-${item.url}`}>
+                                <FooterAnchor href={item.url} className="transition-opacity hover:opacity-60">{item.label}</FooterAnchor>
+                                {index < legalLinks.length - 1 && <span aria-hidden="true">·</span>}
                             </React.Fragment>
                         ))}
-                    </div>
+                    </nav>
                 </div>
-
             </div>
         </footer>
     );
