@@ -5,10 +5,9 @@ import ProductDetailsClient from "./ProductDetailsClient";
 
 export default async function ProductPage({ params }: { params: { handle: string } }) {
     const { handle } = await params;
-
     const product = await getProduct(handle);
 
-
+    // console.log(product)
     if (!product) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen">
@@ -19,3 +18,5 @@ export default async function ProductPage({ params }: { params: { handle: string
 
     return <ProductDetailsClient product={product} />;
 }
+
+export const revalidate = 0

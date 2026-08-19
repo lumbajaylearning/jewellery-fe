@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Star, Heart, Check, Sparkles, Ruler, ShieldCheck, Truck, RefreshCw, ShoppingBag, Info, Zap, Store, Copy, CheckCheck } from 'lucide-react';
 import { MetalType, GoldPurity, MetalOption, PurityOption } from '@/app/types/product';
 import { METALS, PURITY_OPTIONS, RING_SIZES, LIVE_GOLD_RATES, PRODUCT_SPECIFICATIONS } from '@/app/data/productData';
+import { addToCart } from '@/app/lib/medusa/cart';
 
 interface ProductInfoProps {
     selectedMetal: MetalType;
@@ -23,6 +24,33 @@ interface ProductInfoProps {
     onScrollToReviews: () => void;
     product: any; // Add the product prop here
 }
+
+const AddToBagButton: React.FC<{ variantId: string }> = ({ variantId }) => {
+
+    const [loading, setLoading] = useState(false)
+
+    const handleAddToCart = async () => {
+        if (loading) return; // Prevent multiple clicks while loading
+        try {
+            setLoading(true)
+            await addToCart(variantId, 1)
+            alert("Added to bag!")
+        } catch (err) {
+            console.error("Failed to add item to bag:", err)
+        } finally {
+            setLoading(false)
+        }
+    }
+    return (
+        <button
+            onClick={handleAddToCart}
+            className="bg-[#1C1917] hover:bg-[#292524] text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide group"
+        >
+            <ShoppingBag className="w-4 h-4 text-[#C5A880] transition-transform group-hover:scale-110" />
+            <span>{loading ? "Adding..." : "Add to Bag"}</span>
+        </button>
+    )
+};
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
     selectedMetal,
@@ -47,8 +75,12 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     const [copiedSku, setCopiedSku] = useState(false);
     const [copiedBankOffer, setCopiedBankOffer] = useState(false);
 
-    const activeMetalObj: MetalOption = METALS.find(m => m.id === selectedMetal) || METALS[0];
-    const activePurityObj: PurityOption = PURITY_OPTIONS.find(p => p.id === selectedPurity) || PURITY_OPTIONS[0];
+    const karatOptions = product?.options?.find(({ title }) => title == 'Karatage')?.values || []
+    const metalOptions = product?.options?.find(({ title }) => title == 'Metal Tone')?.values || []
+    const ringSize = product?.options?.find(({ title }) => title == 'Ring Size')?.values || []
+    console.log(metalOptions)
+    const activeMetalObj: MetalOption = metalOptions.find(m => m.id === selectedMetal) || metalOptions?.[0]?.id;
+    const activePurityObj: PurityOption = karatOptions.find(p => p.id === selectedPurity) || karatOptions[0]?.id;
 
     // Dynamic price math
     const rate = LIVE_GOLD_RATES[selectedPurity] || 7850;
@@ -203,10 +235,10 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
-                        Gold Karatage: <span className="font-normal text-[#57534E]">{activePurityObj.name}</span>
+                        Gold Karatage: <span className="font-normal text-[#57534E]">{activePurityObj?.name}</span>
                     </label>
                     <span className="text-[11px] text-[#9E7D47] bg-[#F7F3EB] border border-[#E5DEC9] px-2 py-0.5 rounded font-medium">
-                        {activePurityObj.bisCode}
+                        {activePurityObj?.bisCode}
                     </span>
                 </div>
 
@@ -241,15 +273,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
-                        Metal Tone: <span className="font-normal text-[#57534E] capitalize">{activeMetalObj.name}</span>
+                        Metal Tone: <span className="font-normal text-[#57534E] capitalize">{activeMetalObj?.name}</span>
                     </label>
                     <span className="text-[11px] text-[#78716C]">
-                        {activeMetalObj.badge}
+                        {activeMetalObj?.badge}
                     </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2.5">
-                    {METALS.map((metal) => {
+                    {metalOptions.map((metal) => {
                         const isSelected = selectedMetal === metal.id;
                         return (
                             <button
@@ -263,10 +295,10 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                                 <div className="flex items-center gap-2">
                                     <span
                                         className="w-4 h-4 rounded-full border border-black/10 shadow-xs flex-shrink-0"
-                                        style={{ backgroundColor: metal.colorHex }}
+                                        style={{ backgroundColor: metal?.colorHex }}
                                     />
                                     <span className="text-xs font-semibold text-[#1C1917]">
-                                        {metal.name}
+                                        {metal?.value}
                                     </span>
                                 </div>
                                 {isSelected && <Check className="w-3.5 h-3.5 text-[#9E7D47]" />}
@@ -308,19 +340,19 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 </div>
 
                 <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-7 gap-2">
-                    {RING_SIZES.map((size) => {
-                        const isSelected = selectedSize === size;
+                    {ringSize?.map(({ value }) => {
+                        const isSelected = selectedSize === value;
                         return (
                             <button
-                                key={size}
-                                onClick={() => onSelectSize(size)}
+                                key={value}
+                                onClick={() => onSelectSize(value)}
                                 className={`py-2 text-center text-xs font-medium rounded transition-all cursor-pointer border ${isSelected
                                     ? 'bg-[#1C1917] text-[#FAF8F4] border-[#1C1917] font-semibold shadow-xs'
                                     : 'bg-[#FFFFFF] text-[#44403C] border-[#E5DEC9] hover:border-[#1C1917] hover:bg-[#FAF8F4]'
                                     }`}
-                                title={`Ring Size ${size}`}
+                                title={`Ring Size ${value}`}
                             >
-                                {size}
+                                {value}
                             </button>
                         );
                     })}
@@ -338,14 +370,9 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Add to Bag CTA */}
-                    <button
-                        onClick={onAddToCart}
-                        className="bg-[#1C1917] hover:bg-[#292524] text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide group"
-                    >
-                        <ShoppingBag className="w-4 h-4 text-[#C5A880] transition-transform group-hover:scale-110" />
-                        <span>Add to Bag</span>
-                    </button>
 
+
+                    <AddToBagButton variantId={product.variants?.[0].id} />
                     {/* Buy Now CTA */}
                     <button
                         onClick={onBuyNow}

@@ -54,8 +54,9 @@ export function mapMedusaProduct(product: any): ShopProduct {
     };
 }
 
-export async function getProducts() {
+export async function getProducts(categoryId?: string): Promise<ShopProduct[]> {
     const response = await medusa.store.product.list({
+        category_id: categoryId ? [categoryId] : undefined,
         fields: "*variants.calculated_price,*variants.prices",
         limit: 20,
     });
@@ -65,11 +66,24 @@ export async function getProducts() {
 
 
 export async function getProduct(handle: string) {
+
     const { products } = await medusa.store.product.list(
         {
             handle,
-            fields: "*variants,*options,*categories",
+            // fields: "title,handle,description,*collections,*options,metadata"
+            fields: "*variants,*options,*categories,*metadata",
         }
     );
     return products[0];
+}
+
+
+export async function getFeaturedProducts() {
+    const { products } = await medusa.store.product.list({
+        collection_id: ["pcol_01M09T5873KDF1DS10MX0GVA77"],
+        limit: 4,
+        fields: "*variants,*variants.calculated_price,*images",
+        // Filter by tag or collection if configured
+    })
+    return products.map(mapMedusaProduct)
 }

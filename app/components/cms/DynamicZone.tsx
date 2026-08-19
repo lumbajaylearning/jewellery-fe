@@ -10,10 +10,12 @@ import { Section } from "@/app/types/homepage";
 
 type DynamicZoneProps = {
     sections: Section[];
+    featuredProducts?: any[]; // Add this line to accept featuredProducts as a prop
 };
 
 export default function DynamicZone({
     sections,
+    featuredProducts,
 }: DynamicZoneProps) {
     return (
         <>
@@ -37,7 +39,7 @@ export default function DynamicZone({
                     case "homepage.featured-jewellery": {
                         const { id, __component, ...props } = section;
                         return (
-                            <FeaturedJewellery key={`featured-jewellery-${id}`} {...props} />
+                            <FeaturedJewellery key={`featured-jewellery-${id}`} products={featuredProducts} {...props} />
                         );
                     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
 import { HomeTrialModal } from "@/app/components/modals/HomeTrialModal";
@@ -71,6 +71,30 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     const subtotal = goldVal + (makingCharges - makingDiscount);
     const currentProductPrice = subtotal + Math.round(subtotal * 0.03);
 
+    const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
+        const initial: Record<string, string> = {}
+        product.options?.forEach((option: any) => {
+            initial[option.title] = option.values?.[0]?.value
+        })
+        return initial
+    })
+
+    const selectedVariant = useMemo(() => {
+        return product.variants?.find((variant: any) => {
+            return variant.options?.every((opt: any) => {
+                const optionTitle = product.options?.find((o: any) => o.id === opt.option_id)?.title
+                return selectedOptions[optionTitle] === opt.value
+            })
+        })
+    }, [product, selectedOptions])
+
+    const handleOptionChange = (optionTitle: string, value: string) => {
+        setSelectedOptions((prev) => ({ ...prev, [optionTitle]: value }))
+    }
+
+    const price = selectedVariant?.calculated_price?.calculated_amount
+        || product.variants?.[0]?.calculated_price?.calculated_amount
+    console.log("Selected Options:", selectedOptions);
     const showToast = (msg: string) => {
         setToastMessage(msg);
         setTimeout(() => setToastMessage(null), 3000);
@@ -144,6 +168,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                             onOpen360Modal={() => { }}
                             onOpenCertificateModal={() => { }}
                             onOpenVirtualTryOn={() => { }}
+                            images={product?.images || []}
                         />
                     </div>
                     {/* Right Column: Product Details */}

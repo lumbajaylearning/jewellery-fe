@@ -173,6 +173,7 @@ interface ProductGalleryProps {
     onOpen360Modal: () => void;
     onOpenCertificateModal: () => void;
     onOpenVirtualTryOn?: () => void;
+    images?: ProductImage[];
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
@@ -181,9 +182,10 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     onToggleWishlist,
     onOpen360Modal,
     onOpenCertificateModal,
-    onOpenVirtualTryOn
+    onOpenVirtualTryOn,
+    images = []
 }) => {
-    const images: ProductImage[] = PRODUCT_IMAGES_BY_METAL[selectedMetal] || PRODUCT_IMAGES_BY_METAL['yellow-gold'];
+    // const images: ProductImage[] = PRODUCT_IMAGES_BY_METAL[selectedMetal] || PRODUCT_IMAGES_BY_METAL['yellow-gold'];
     const [activeIndex, setActiveIndex] = useState(0);
     const [isZooming, setIsZooming] = useState(false);
     const [zoomCoords, setZoomCoords] = useState({ x: 0, y: 0, bgX: 50, bgY: 50 });
@@ -235,20 +237,20 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                                 setActiveIndex(idx);
                             }}
                             className={`relative flex-shrink-0 w-16 h-20 sm:w-20 sm:h-24 rounded overflow-hidden transition-all duration-200 cursor-pointer border ${isSelected
-                                    ? 'border-[#9E7D47] ring-1 ring-[#9E7D47] opacity-100 shadow-md'
-                                    : 'border-[#E5DEC9] bg-[#FFFFFF] opacity-80 hover:opacity-100 hover:border-[#9E7D47]'
+                                ? 'border-[#9E7D47] ring-1 ring-[#9E7D47] opacity-100 shadow-md'
+                                : 'border-[#E5DEC9] bg-[#FFFFFF] opacity-80 hover:opacity-100 hover:border-[#9E7D47]'
                                 }`}
-                            title={img.title}
-                            aria-label={`Select ${img.title}`}
+                            title={img?.title}
+                            aria-label={`Select ${img?.title}`}
                         >
                             <img
                                 src={img.url}
-                                alt={img.alt}
+                                alt={img?.alt}
                                 className="w-full h-full object-cover object-center"
                                 referrerPolicy="no-referrer"
                             />
                             <span className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-[8.5px] text-[#FAF8F4] text-center pb-0.5 pt-2 font-medium tracking-tight truncate px-1">
-                                {img.title}
+                                {img?.title}
                             </span>
                         </button>
                     );
@@ -261,8 +263,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                         onOpen360Modal();
                     }}
                     className={`relative flex-shrink-0 w-16 h-20 sm:w-20 sm:h-24 rounded overflow-hidden flex flex-col items-center justify-center transition-all duration-200 cursor-pointer border ${is360Active
-                            ? 'border-[#9E7D47] bg-[#F7F3EB] ring-1 ring-[#9E7D47] text-[#9E7D47]'
-                            : 'border-[#E5DEC9] bg-[#FFFFFF] text-[#78716C] hover:text-[#1C1917] hover:border-[#9E7D47]'
+                        ? 'border-[#9E7D47] bg-[#F7F3EB] ring-1 ring-[#9E7D47] text-[#9E7D47]'
+                        : 'border-[#E5DEC9] bg-[#FFFFFF] text-[#78716C] hover:text-[#1C1917] hover:border-[#9E7D47]'
                         }`}
                     title="Interactive 360° Studio View"
                     aria-label="Open 360 degree turntable view"
@@ -277,7 +279,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
             <div className="relative flex-1 bg-[#FFFFFF] rounded-md overflow-hidden border border-[#E5DEC9] min-h-[420px] sm:min-h-[540px] lg:min-h-[640px] flex items-center justify-center group shadow-xs">
                 {/* Top Badges */}
                 <div className="absolute top-4 left-4 z-20 flex flex-col sm:flex-row gap-2 items-start">
-                    <button
+                    {/* <button
                         onClick={onOpenCertificateModal}
                         className="bg-[#FFFFFF]/90 hover:bg-[#FFFFFF] backdrop-blur-md text-[#1C1917] text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded border border-[#E5DEC9] shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
                     >
@@ -288,27 +290,27 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                     <div className="bg-[#FAF8F4]/90 backdrop-blur-md text-[#9E7D47] text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded border border-[#E5DEC9] shadow-xs flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-[#9E7D47]" />
                         <span>22 Karat Pure Gold</span>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* Top Right Action Icons */}
                 <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                     {/* Virtual Try-On AR Button */}
-                    <button
+                    {/* <button
                         onClick={onOpen360Modal}
                         className="bg-[#FFFFFF]/90 hover:bg-[#FFFFFF] text-[#1C1917] p-2 rounded-full backdrop-blur-md transition-all cursor-pointer shadow-xs border border-[#E5DEC9] flex items-center gap-1 text-[11px] font-medium px-2.5"
                         title="Try with 360 Studio / AR"
                     >
                         <Camera className="w-3.5 h-3.5 text-[#9E7D47]" />
                         <span className="hidden sm:inline">Try It On</span>
-                    </button>
+                    </button> */}
 
                     {/* Wishlist Button */}
                     <button
                         onClick={onToggleWishlist}
                         className={`p-2.5 rounded-full backdrop-blur-md transition-all duration-200 cursor-pointer shadow-xs border ${isWishlisted
-                                ? 'bg-[#1C1917] text-[#FAF8F4] border-[#1C1917]'
-                                : 'bg-[#FFFFFF]/90 text-[#57534E] hover:text-[#1C1917] hover:bg-[#FFFFFF] border-[#E5DEC9]'
+                            ? 'bg-[#1C1917] text-[#FAF8F4] border-[#1C1917]'
+                            : 'bg-[#FFFFFF]/90 text-[#57534E] hover:text-[#1C1917] hover:bg-[#FFFFFF] border-[#E5DEC9]'
                             }`}
                         title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
                         aria-label="Wishlist"

@@ -2,8 +2,14 @@
 import ProductGrid from "@/app/components/product/ProductGrid";
 import { getProducts } from "@/app/lib/medusa/products";
 
-export default async function ShopPage() {
-    const products = await getProducts();
+type ShopPageProps = {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+
+    const { category } = await searchParams;
+    const products = await getProducts(category as string | undefined);
     return (
         <main className="w-full max-w-7xl bg-background">
 

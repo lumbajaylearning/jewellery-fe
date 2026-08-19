@@ -1,5 +1,6 @@
 import Image from "next/image";
 import React from "react";
+import ProductGrid from "../product/ProductGrid";
 
 // --- Types ---
 export interface ProductItem {
@@ -81,68 +82,7 @@ export const FeaturedJewellery: React.FC<FeaturedJewelleryProps> = ({
       </div>
 
       {/* Product Grid: 2 columns on Mobile, 4 columns on Desktop */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 w-full">
-        {products.map((product) => {
-          const formattedPrice =
-            typeof product.price === "number"
-              ? `₹${product.price.toLocaleString("en-IN")}`
-              : product.price;
-
-          return (
-            <div key={product.id} className="group flex flex-col items-center text-center">
-
-              {/* Product Image Box with Heart Icon */}
-              <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-sm overflow-hidden mb-3">
-                <Image
-                  src={product.imageUrl || "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=600&q=80"}
-                  alt={product.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-
-                {/* Wishlist / Heart Icon */}
-                <button
-                  type="button"
-                  aria-label="Add to Wishlist"
-                  className="absolute top-3 right-3 text-gray-600 hover:text-black transition"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Product Details */}
-              <a href={product.link || "#"} className="space-y-1">
-                <h3 className="text-xs md:text-sm font-medium text-gray-900 group-hover:underline">
-                  {product.name}
-                </h3>
-                <p className="text-xs md:text-sm font-semibold text-gray-900">
-                  {formattedPrice}
-                </p>
-                {product.subtitle && (
-                  <p className="text-[11px] text-gray-500">
-                    {product.subtitle}
-                  </p>
-                )}
-              </a>
-
-            </div>
-          );
-        })}
-      </div>
+      <ProductGrid products={products} />
 
     </section>
   );
