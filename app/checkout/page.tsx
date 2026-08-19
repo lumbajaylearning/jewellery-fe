@@ -12,6 +12,7 @@ import {
     setCartShippingMethod,
     updateCartDetails,
 } from "@/app/lib/medusa/cart";
+import { listCustomerAddresses } from "@/app/lib/medusa/customer";
 
 const initialAddress = {
     first_name: "",
@@ -40,6 +41,7 @@ export default function CheckoutPage() {
     const [selectedShippingId, setSelectedShippingId] = useState("");
     const [email, setEmail] = useState("");
     const [address, setAddress] = useState(initialAddress);
+    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -75,6 +77,7 @@ export default function CheckoutPage() {
                 if (!active) return;
                 setShippingOptions(options);
                 setSelectedShippingId(dataCart.shipping_methods?.[0]?.shipping_option_id ?? options[0]?.id ?? "");
+                listCustomerAddresses().then(setSavedAddresses).catch(() => undefined);
             })
             .catch((caughtError) => {
                 if (active) setError(caughtError instanceof Error ? caughtError.message : "Unable to load checkout.");
@@ -146,6 +149,7 @@ export default function CheckoutPage() {
                 <div className="space-y-6">
                     <section className="rounded border border-border bg-white p-5 sm:p-7">
                         <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-text-primary text-xs font-semibold text-white">1</span><h2 className="font-heading text-2xl text-text-primary">Contact details</h2></div>
+                        {savedAddresses.length > 0 && <div className="mt-6"><p className="text-xs font-semibold uppercase tracking-wider text-text-secondary">Saved addresses</p><div className="mt-3 flex gap-3 overflow-x-auto pb-2">{savedAddresses.map((savedAddress) => <button key={savedAddress.id} type="button" onClick={() => setAddress({ first_name: savedAddress.first_name ?? "", last_name: savedAddress.last_name ?? "", address_1: savedAddress.address_1 ?? "", address_2: savedAddress.address_2 ?? "", city: savedAddress.city ?? "", province: savedAddress.province ?? "", postal_code: savedAddress.postal_code ?? "", country_code: savedAddress.country_code ?? "in", phone: savedAddress.phone ?? "" })} className="min-w-52 rounded border border-border bg-surface p-3 text-left text-xs text-text-secondary hover:border-gold"><span className="block font-semibold text-text-primary">{savedAddress.address_name || "Saved address"}</span><span className="mt-1 block truncate">{savedAddress.address_1}, {savedAddress.city}</span></button>)}</div></div>}
                         <div className="mt-6 grid gap-4 sm:grid-cols-2">
                             <label className="sm:col-span-2 text-xs font-semibold text-text-primary">Email address<input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" placeholder="you@example.com" /></label>
                             <label className="text-xs font-semibold text-text-primary">First name<input required value={address.first_name} onChange={(event) => handleAddressChange("first_name", event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>

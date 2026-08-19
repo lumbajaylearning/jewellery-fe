@@ -51,3 +51,23 @@ export async function retrieveCustomerOrder(orderId: string) {
     });
     return order;
 }
+
+export async function listCustomerAddresses() {
+    const response = await medusa.store.customer.listAddress({ limit: 50 });
+    return response.addresses;
+}
+
+export async function createCustomerAddress(address: any) {
+    const { customer } = await medusa.store.customer.createAddress(address);
+    return customer.addresses ?? [];
+}
+
+export async function updateCustomerAddress(addressId: string, address: any) {
+    const { customer } = await medusa.store.customer.updateAddress(addressId, address);
+    return customer.addresses ?? [];
+}
+
+export async function deleteCustomerAddress(addressId: string) {
+    const { parent } = await medusa.store.customer.deleteAddress(addressId);
+    return parent.addresses ?? [];
+}
