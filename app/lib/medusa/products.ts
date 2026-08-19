@@ -89,12 +89,19 @@ export async function getProducts(query: ShopProductQuery = {}) {
 }
 
 export async function getProductCategories() {
-    const response = await medusa.store.category.list({ limit: 100, order: "name" });
+    const response = await medusa.store.category.list({ limit: 100, order: "name", fields: "id,name,handle,description,metadata" });
     return response.product_categories.map((category: any) => ({
         id: category.id,
         name: category.name,
         handle: category.handle,
+        description: category.description ?? null,
+        image: typeof category.metadata?.image_url === "string" ? category.metadata.image_url : null,
     }));
+}
+
+export async function getProductCategoryByHandle(handle: string) {
+    const response = await medusa.store.category.list({ handle, limit: 1, fields: "id,name,handle" });
+    return response.product_categories[0] ?? null;
 }
 
 
