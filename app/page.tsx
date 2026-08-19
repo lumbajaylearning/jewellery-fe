@@ -2,17 +2,19 @@
 // import SiteShell from "@/app/components/site-shell";
 import { getHomepage } from "@/app/lib/strapi/queries";
 import DynamicZone from "@/app/components/cms/DynamicZone";
-import { getFeaturedProducts } from "./lib/medusa/products";
+import { getFeaturedProducts, getProductCategories } from "./lib/medusa/products";
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export default async function Home() {
-  const homepage = await getHomepage();
-  const featuredProducts = await getFeaturedProducts();
+  const [homepage, featuredProducts, categories] = await Promise.all([
+    getHomepage(),
+    getFeaturedProducts().catch(() => []),
+    getProductCategories().catch(() => []),
+  ]);
   return (
-    <main className="w-full max-w-7xl px-5">
-      <DynamicZone sections={homepage.data.sections} featuredProducts={featuredProducts} />
+    <main className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
+      <DynamicZone sections={homepage.data.sections} featuredProducts={featuredProducts} categories={categories} />
     </main>
   );
 }
-

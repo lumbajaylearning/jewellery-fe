@@ -118,11 +118,12 @@ export async function getProduct(handle: string) {
 
 
 export async function getFeaturedProducts() {
+    const featuredCollectionId = process.env.MEDUSA_FEATURED_COLLECTION_ID ?? process.env.NEXT_PUBLIC_MEDUSA_FEATURED_COLLECTION_ID;
     const { products } = await medusa.store.product.list({
-        collection_id: ["pcol_01M09T5873KDF1DS10MX0GVA77"],
+        collection_id: featuredCollectionId ? [featuredCollectionId] : undefined,
+        order: "-created_at",
         limit: 4,
         fields: "*variants,*variants.calculated_price,*images",
-        // Filter by tag or collection if configured
     })
     return products.map(mapMedusaProduct)
 }
