@@ -100,8 +100,8 @@ export async function getProductCategories() {
 }
 
 export async function getProductCategoryByHandle(handle: string) {
-    const response = await medusa.store.category.list({ handle, limit: 1, fields: "id,name,handle" });
-    return response.product_categories[0] ?? null;
+    const categories = await getProductCategories();
+    return categories.find((category) => category.handle === handle) ?? null;
 }
 
 
