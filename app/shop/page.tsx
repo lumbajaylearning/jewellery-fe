@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Search, SlidersHorizontal, X } from "lucide-react";
 import ProductGrid from "@/app/components/product/ProductGrid";
+import ShopFilters from "@/app/components/product/ShopFilters";
 import { getProductCategories, getProducts, ShopProductQuery } from "@/app/lib/medusa/products";
 
 type ShopPageProps = {
@@ -52,7 +52,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
     const totalPages = Math.max(1, Math.ceil(count / limit));
     const currentPage = Math.min(page, totalPages);
-    const activeFilters = [q, categoryId, minPriceValue, maxPriceValue].filter(Boolean).length;
+    const activeFilters = [categoryId, minPriceValue, maxPriceValue].filter(Boolean).length;
     const persistentParams = new URLSearchParams();
     if (q) persistentParams.set("q", q);
     if (categoryId) persistentParams.set("category", categoryId);
@@ -69,17 +69,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <p className="mx-auto mt-4 max-w-xl text-sm text-text-secondary">Discover timeless jewellery designed for every moment.</p>
         </header>
 
-        <form action="/shop" className="mb-8 rounded border border-border bg-surface p-4 sm:p-5">
-            <div className="grid gap-3 lg:grid-cols-[minmax(240px,1.5fr)_1fr_150px_150px_180px_auto]">
-                <label className="relative block"><span className="sr-only">Search jewellery</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" /><input name="q" defaultValue={q} placeholder="Search rings, necklaces…" className="h-11 w-full rounded border border-border bg-white pl-10 pr-3 text-sm outline-none focus:border-gold" /></label>
-                <label><span className="sr-only">Category</span><select name="category" defaultValue={categoryId} className="h-11 w-full rounded border border-border bg-white px-3 text-sm text-text-primary outline-none focus:border-gold"><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
-                <label><span className="sr-only">Minimum price</span><input type="number" name="min_price" min="0" step="500" defaultValue={minPriceValue} placeholder="Min ₹" className="h-11 w-full rounded border border-border bg-white px-3 text-sm outline-none focus:border-gold" /></label>
-                <label><span className="sr-only">Maximum price</span><input type="number" name="max_price" min="0" step="500" defaultValue={maxPriceValue} placeholder="Max ₹" className="h-11 w-full rounded border border-border bg-white px-3 text-sm outline-none focus:border-gold" /></label>
-                <label><span className="sr-only">Sort products</span><select name="sort" defaultValue={sort} className="h-11 w-full rounded border border-border bg-white px-3 text-sm text-text-primary outline-none focus:border-gold"><option value="newest">Newest first</option><option value="title-asc">Name: A–Z</option><option value="title-desc">Name: Z–A</option><option value="price-asc">Price: low to high</option><option value="price-desc">Price: high to low</option></select></label>
-                <button className="flex h-11 items-center justify-center gap-2 rounded bg-text-primary px-5 text-xs font-semibold uppercase tracking-wider text-white"><SlidersHorizontal className="h-4 w-4" /> Apply</button>
-            </div>
-            {activeFilters > 0 && <div className="mt-4 flex items-center justify-between border-t border-border pt-3"><p className="text-xs text-text-secondary">{activeFilters} active {activeFilters === 1 ? "filter" : "filters"}</p><Link href="/shop" className="flex items-center gap-1 text-xs font-semibold text-text-primary"><X className="h-3.5 w-3.5" /> Clear filters</Link></div>}
-        </form>
+        <ShopFilters categories={categories} values={{ q, category: categoryId, minPrice: minPriceValue, maxPrice: maxPriceValue, sort }} activeFilterCount={activeFilters} />
 
         <div className="mb-6 flex items-center justify-between border-b border-border pb-4"><p className="text-sm text-text-secondary"><strong className="text-text-primary">{count}</strong> {count === 1 ? "piece" : "pieces"} found</p>{q && <p className="hidden text-xs text-text-secondary sm:block">Results for “{q}”</p>}</div>
 
