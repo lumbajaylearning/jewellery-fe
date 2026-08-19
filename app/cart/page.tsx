@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, ShieldCheck, ShoppingBag, Sparkles, Trash2 } from "lucide-react";
 import { getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
+import { writeHomeTrialItems } from "@/app/lib/home-trial";
 
 type MedusaCart = any;
 
@@ -67,6 +68,18 @@ export default function CartPage() {
         } finally {
             setUpdatingItemId(null);
         }
+    };
+
+    const prepareHomeTrial = () => {
+        writeHomeTrialItems(items.slice(0, 4).map((item: any) => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            title: item.product_title ?? item.title,
+            variant_title: item.variant_title,
+            thumbnail: item.thumbnail,
+            price: item.unit_price,
+            currency_code: currencyCode,
+        })));
     };
 
     if (loading) {
@@ -155,7 +168,7 @@ export default function CartPage() {
                             Proceed to checkout
                         </Link>
                         <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />Secure Medusa checkout</div>
-                        <Link href="/book" className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-border bg-white px-4 py-3 text-xs font-semibold text-text-primary">
+                        <Link href="/book" onClick={prepareHomeTrial} className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-border bg-white px-4 py-3 text-xs font-semibold text-text-primary">
                             <Sparkles className="h-4 w-4 text-gold" />Prefer a home trial?
                         </Link>
                     </aside>

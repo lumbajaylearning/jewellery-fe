@@ -36,7 +36,8 @@ export interface Product {
 }
 
 export interface BookingItemPayload {
-    product_id: number;
+    product_id: string;
+    variant_id?: string;
     quantity: number;
     note?: string | null;
 }

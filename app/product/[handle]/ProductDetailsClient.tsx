@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
-import { HomeTrialModal } from "@/app/components/modals/HomeTrialModal";
 import { Interactive360Modal } from "@/app/components/modals/Interactive360Modal";
 import { OldGoldExchangeModal } from "@/app/components/modals/OldGoldExchangeModal";
 import { PriceBreakupModal } from "@/app/components/modals/PriceBreakupModal";
@@ -19,15 +19,17 @@ import { CustomerReviews } from "@/app/components/shared/CustomerReviews";
 import { DeliveryChecker } from "@/app/components/shared/DeliveryChecker";
 import { TrustFeatures } from "@/app/components/shared/TrustFeatures";
 import { TryAtHomeSection } from "@/app/components/shared/TryAtHomeSection";
-import { LIVE_GOLD_RATES, PRODUCT_SPECIFICATIONS } from "@/app/data/productData";
+import { LIVE_GOLD_RATES } from "@/app/data/productData";
 import { CartItem, GoldPurity } from "@/app/types/product";
 import { addToCart, getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
+import { addHomeTrialItem } from "@/app/lib/home-trial";
 
 interface ProductDetailsClientProps {
     product: any;
 }
 
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
+    const router = useRouter();
     // Product Configurator States
     const [selectedMetal, setSelectedMetal] = useState<MetalType>('yellow-gold');
     const [selectedPurity, setSelectedPurity] = useState<GoldPurity>('22K');
@@ -61,8 +63,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
     // Modal Visibilities
     const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-    const [homeTrialOpen, setHomeTrialOpen] = useState(false);
-    const [trialInitialPiece, setTrialInitialPiece] = useState<string | undefined>(undefined);
     const [interactive360Open, setInteractive360Open] = useState(false);
     const [certificateModalOpen, setCertificateModalOpen] = useState(false);
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
@@ -133,6 +133,23 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
         handleAddToCart();
     };
 
+    const handleHomeTrial = () => {
+        if (!selectedVariant?.id) {
+            showToast("Select an available option before booking a home trial");
+            return;
+        }
+        addHomeTrialItem({
+            product_id: product.id,
+            variant_id: selectedVariant.id,
+            title: product.title,
+            variant_title: selectedVariant.title,
+            thumbnail: product.thumbnail ?? product.images?.[0]?.url,
+            price,
+            currency_code: selectedVariant.calculated_price?.currency_code ?? "inr",
+        });
+        router.push("/book");
+    };
+
     const handleRemoveCartItem = async (id: string) => {
         try {
             const cart = await removeCartLineItem(id);
@@ -194,7 +211,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                             selectedSize={selectedSize}
                             onSelectSize={setSelectedSize}
                             onOpenSizeGuide={() => setSizeGuideOpen(true)}
-                            onOpenHomeTrial={() => setHomeTrialOpen(true)}
+                            onOpenHomeTrial={handleHomeTrial}
                             onOpenPriceBreakdown={() => setPriceBreakupModalOpen(true)}
                             onOpenCertificateModal={() => setCertificateModalOpen(true)}
                             onOpenExchangeModal={() => setExchangeModalOpen(true)}
@@ -218,14 +235,14 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
                         {/* Try at Home Feature in Right Rail for Desktop */}
                         <div className="hidden lg:block pt-2">
-                            <TryAtHomeSection onOpenHomeTrial={() => setHomeTrialOpen(true)} />
+                            <TryAtHomeSection onOpenHomeTrial={handleHomeTrial} />
                         </div>
                     </div>
                 </div>
 
                 {/* Try at Home Feature in Main Stream for Mobile */}
                 <div className="lg:hidden mt-8">
-                    <TryAtHomeSection onOpenHomeTrial={() => setHomeTrialOpen(true)} />
+                    <TryAtHomeSection onOpenHomeTrial={handleHomeTrial} />
                 </div>
 
                 {/* Trust Indicators Bar */}
@@ -254,7 +271,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 isWishlisted={isWishlisted}
                 onToggleWishlist={handleToggleWishlist}
                 onAddToCart={handleAddToCart}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
+                onOpenHomeTrial={handleHomeTrial}
                 selectedMetal={selectedMetal}
                 selectedPurity={selectedPurity}
                 selectedSize={selectedSize}
@@ -274,12 +291,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 onSelectSize={setSelectedSize}
             />
 
-            <HomeTrialModal
-                isOpen={homeTrialOpen}
-                onClose={() => setHomeTrialOpen(false)}
-                initialPiece={trialInitialPiece}
-            />
-
             <Interactive360Modal
                 isOpen={interactive360Open}
                 onClose={() => setInteractive360Open(false)}
@@ -297,7 +308,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 items={cartItems}
                 onRemoveItem={handleRemoveCartItem}
                 onUpdateQty={handleUpdateQty}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
+                onOpenHomeTrial={handleHomeTrial}
             />
 
             <WishlistDrawer
@@ -306,7 +317,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 isMainProductWishlisted={isWishlisted}
                 onToggleMainWishlist={handleToggleWishlist}
                 onAddToCart={handleAddToCart}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
+                onOpenHomeTrial={handleHomeTrial}
                 metal={selectedMetal}
             />
 
@@ -325,10 +336,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
             <StoreAvailabilityModal
                 isOpen={storeModalOpen}
                 onClose={() => setStoreModalOpen(false)}
-                onBookAppointment={(storeName) => {
-                    setTrialInitialPiece(`${PRODUCT_SPECIFICATIONS.productName} at ${storeName}`);
-                    setHomeTrialOpen(true);
-                }}
+                onBookAppointment={handleHomeTrial}
             />
         </div>
     );
