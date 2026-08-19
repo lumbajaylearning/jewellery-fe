@@ -10,17 +10,17 @@ function formatPrice(amount: number, currencyCode: string) {
 }
 
 export function mapMedusaProduct(product: any): ShopProduct {
-    const variants = product.variants.map((variant: any) => ({
+    const variants = (product.variants ?? []).map((variant: any) => ({
         id: variant.id,
         title: variant.title,
-        amount: variant.calculated_price.calculated_amount,
-        currencyCode: variant.calculated_price.currency_code,
+        amount: variant.calculated_price?.calculated_amount ?? variant.prices?.[0]?.amount ?? 0,
+        currencyCode: variant.calculated_price?.currency_code ?? variant.prices?.[0]?.currency_code ?? "inr",
     }));
 
     const amounts = variants.map((variant: any) => variant.amount);
 
-    const min = Math.min(...amounts);
-    const max = Math.max(...amounts);
+    const min = amounts.length ? Math.min(...amounts) : 0;
+    const max = amounts.length ? Math.max(...amounts) : 0;
 
     return {
         id: product.id,
@@ -54,14 +54,47 @@ export function mapMedusaProduct(product: any): ShopProduct {
     };
 }
 
-export async function getProducts(categoryId?: string): Promise<ShopProduct[]> {
+export interface ShopProductQuery {
+    q?: string;
+    categoryId?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    sort?: "newest" | "title-asc" | "title-desc" | "price-asc" | "price-desc";
+    page?: number;
+    limit?: number;
+}
+
+export async function getProducts(query: ShopProductQuery = {}) {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.max(1, query.limit ?? 12);
+    const usesPriceQuery = query.minPrice !== undefined || query.maxPrice !== undefined || query.sort === "price-asc" || query.sort === "price-desc";
     const response = await medusa.store.product.list({
-        category_id: categoryId ? [categoryId] : undefined,
-        fields: "*variants.calculated_price,*variants.prices",
-        limit: 20,
+        q: query.q || undefined,
+        category_id: query.categoryId ? [query.categoryId] : undefined,
+        order: query.sort === "title-asc" ? "title" : query.sort === "title-desc" ? "-title" : "-created_at",
+        fields: "*variants.calculated_price,*variants.prices,*images",
+        limit: usesPriceQuery ? 100 : limit,
+        offset: usesPriceQuery ? 0 : (page - 1) * limit,
     });
 
-    return response.products.map(mapMedusaProduct);
+    let products = response.products.map(mapMedusaProduct);
+    if (query.minPrice !== undefined) products = products.filter((product) => product.priceRange!.max >= query.minPrice!);
+    if (query.maxPrice !== undefined) products = products.filter((product) => product.priceRange!.min <= query.maxPrice!);
+    if (query.sort === "price-asc") products.sort((a, b) => a.price.amount - b.price.amount);
+    if (query.sort === "price-desc") products.sort((a, b) => b.price.amount - a.price.amount);
+
+    const count = usesPriceQuery ? products.length : response.count;
+    const offset = usesPriceQuery ? (page - 1) * limit : 0;
+    return { products: products.slice(offset, offset + limit), count, page, limit };
+}
+
+export async function getProductCategories() {
+    const response = await medusa.store.category.list({ limit: 100, order: "name" });
+    return response.product_categories.map((category: any) => ({
+        id: category.id,
+        name: category.name,
+        handle: category.handle,
+    }));
 }
 
 
