@@ -1,5 +1,3 @@
-import type { HomepageData } from "@/app/types/homepage";
-
 const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 function buildApiUrl(path: string) {
@@ -25,14 +23,6 @@ async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
 
     return payload as T;
-}
-
-export interface Product {
-    id: number;
-    name: string;
-    description?: string | null;
-    base_price: number;
-    category: string;
 }
 
 export interface BookingItemPayload {
@@ -64,36 +54,9 @@ export interface BookingResponse {
     booking_items: BookingItemPayload[];
 }
 
-export async function getProducts(params?: { category?: string; min_price?: number; max_price?: number }): Promise<Product[]> {
-    const search = new URLSearchParams();
-
-    if (params?.category) {
-        search.set("category", params.category);
-    }
-    if (params?.min_price !== undefined) {
-        search.set("min_price", String(params.min_price));
-    }
-    if (params?.max_price !== undefined) {
-        search.set("max_price", String(params.max_price));
-    }
-
-    const query = search.toString();
-    return apiRequest<Product[]>(query ? `/api/products?${query}` : "/api/products");
-}
-
-export async function getProduct(productId: string | number): Promise<Product> {
-    return apiRequest<Product>(`/api/products/${productId}`);
-}
-
 export async function createBooking(payload: BookingPayload): Promise<BookingResponse> {
     return apiRequest<BookingResponse>(`/api/bookings`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
-}
-
-export async function fetchHomepageData(): Promise<HomepageData> {
-    // Construct the URL for the Strapi homepage endpoint
-    // You may need to adjust this path based on your actual Strapi endpoint
-    return apiRequest<HomepageData>("/api/homepage?populate[sections][populate]=*");
 }
