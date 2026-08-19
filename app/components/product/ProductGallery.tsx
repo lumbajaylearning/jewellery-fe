@@ -1,158 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Heart, ZoomIn, RotateCcw, ShieldCheck, Sparkles, Award, Maximize2, Camera, Eye } from 'lucide-react';
-
-export const PRODUCT_IMAGES_BY_METAL: Record<string, ProductImage[]> = {
-    'yellow-gold': [
-        {
-            id: 'yg-front',
-            url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=85',
-            title: 'Front View',
-            category: 'front',
-            alt: 'Glorious 22 Karat Yellow Gold Floral Ring - Front View',
-            description: 'Intricate blooming flower motif handcrafted with polished layered petals and textured gold granulation.'
-        },
-        {
-            id: 'yg-side',
-            url: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1200&q=85',
-            title: 'Side Profile',
-            category: 'side',
-            alt: 'Side Profile showing comfort-fit shank and dome floral structure',
-            description: 'Elevated floral dome with tapering comfort-fit shank designed for seamless everyday wear.'
-        },
-        {
-            id: 'yg-hand',
-            url: 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&w=1200&q=85',
-            title: 'On Hand',
-            category: 'on-hand',
-            alt: 'Glorious 22K Floral Ring worn on hand against natural linen',
-            description: 'Proportionate 16.8mm floral bloom gracefully accentuating the finger.'
-        },
-        {
-            id: 'yg-lifestyle',
-            url: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=85',
-            title: 'Editorial Styling',
-            category: 'lifestyle',
-            alt: 'Fine jewellery editorial styling on warm textured travertine stone',
-            description: 'Designed for effortless transitions from festive celebrations to daily elegance.'
-        },
-        {
-            id: 'yg-craft',
-            url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=85',
-            title: 'Craftsmanship Macro 10x',
-            category: 'diamond',
-            alt: 'Macro filigree and hand-carved floral texture details',
-            description: 'Microscopic gold wirework and matte-chased petal engravings executed by master artisans.'
-        },
-        {
-            id: 'yg-packaging',
-            url: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=85',
-            title: 'Luxury Box & Certificate',
-            category: 'packaging',
-            alt: 'Handmade velvet keepsake box with tamper-evident seal and BIS Hallmarking card',
-            description: 'Delivered in our signature embossed luxury box with tamper-evident seal and BIS Certificate dossier.'
-        }
-    ],
-    'rose-gold': [
-        {
-            id: 'rg-front',
-            url: 'https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=1200&q=85',
-            title: 'Front View',
-            category: 'front',
-            alt: 'Floral Ring in 18K Rose Gold - Front View',
-            description: 'Warm blush 18K rose gold setting highlighting delicate botanical curves.'
-        },
-        {
-            id: 'rg-side',
-            url: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1200&q=85',
-            title: 'Side Profile',
-            category: 'side',
-            alt: 'Side Profile in 18K Rose Gold',
-            description: 'Artisan hand-finished basket setting with ergonomic band.'
-        },
-        {
-            id: 'rg-hand',
-            url: 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&w=1200&q=85',
-            title: 'On Hand',
-            category: 'on-hand',
-            alt: 'Rose Gold Floral Ring worn gracefully on hand',
-            description: 'Complements diverse skin tones with gentle warm blush undertones.'
-        },
-        {
-            id: 'rg-lifestyle',
-            url: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=85',
-            title: 'Editorial Styling',
-            category: 'lifestyle',
-            alt: 'Fine jewellery editorial styling',
-            description: 'Subtle, romantic luxury engineered for a lifetime of comfortable wear.'
-        },
-        {
-            id: 'rg-craft',
-            url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=85',
-            title: 'Craftsmanship Macro 10x',
-            category: 'diamond',
-            alt: 'Macro filigree details in rose gold',
-            description: 'Chased petal engravings displaying pristine symmetry.'
-        },
-        {
-            id: 'rg-packaging',
-            url: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=85',
-            title: 'Luxury Box & Certificate',
-            category: 'packaging',
-            alt: 'Luxury packaging box with hallmark authenticity',
-            description: 'Arrives in our signature textured keepsake box with official certificate dossier.'
-        }
-    ],
-    'white-gold': [
-        {
-            id: 'wg-front',
-            url: 'https://images.unsplash.com/photo-1603561591411-07134e71a2a9?auto=format&fit=crop&w=1200&q=85',
-            title: 'Front View',
-            category: 'front',
-            alt: 'Floral Ring in 18K White Gold - Front View',
-            description: 'Luminous rhodium-finished 18K white gold accentuating architectural floral petals.'
-        },
-        {
-            id: 'wg-side',
-            url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1200&q=85',
-            title: 'Side Profile',
-            category: 'side',
-            alt: 'Side Profile in 18K White Gold',
-            description: 'Precision engineered comfort-fit inner shank with silky polished bevel.'
-        },
-        {
-            id: 'wg-hand',
-            url: 'https://images.unsplash.com/photo-1598560917505-59a3ad559071?auto=format&fit=crop&w=1200&q=85',
-            title: 'On Hand',
-            category: 'on-hand',
-            alt: 'White Gold Floral Ring worn gracefully on hand',
-            description: 'Ultra-modern brilliance and crisp architectural presence.'
-        },
-        {
-            id: 'wg-lifestyle',
-            url: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=85',
-            title: 'Editorial Styling',
-            category: 'lifestyle',
-            alt: 'Fine jewellery editorial styling',
-            description: 'A contemporary classic for modern celebratory and daily wear.'
-        },
-        {
-            id: 'wg-craft',
-            url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=85',
-            title: 'Craftsmanship Macro 10x',
-            category: 'diamond',
-            alt: 'Macro facet reflection and floral carving',
-            description: 'High-precision micro-setting and rhodium mirror finish.'
-        },
-        {
-            id: 'wg-packaging',
-            url: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=1200&q=85',
-            title: 'Luxury Box & Certificate',
-            category: 'packaging',
-            alt: 'Luxury packaging box with hallmark authenticity',
-            description: 'Arrives in our signature textured keepsake box with official certificate dossier.'
-        }
-    ]
-};
+import { Heart, ZoomIn, RotateCcw } from 'lucide-react';
 
 export type MetalType = 'yellow-gold' | 'rose-gold' | 'white-gold';
 
@@ -175,6 +22,7 @@ interface ProductGalleryProps {
     onOpenVirtualTryOn?: () => void;
     images?: Array<{ id?: string; url: string; title?: string; alt?: string }>;
     productTitle?: string;
+    enable360?: boolean;
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
@@ -185,7 +33,8 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     onOpenCertificateModal,
     onOpenVirtualTryOn,
     images: productImages = [],
-    productTitle = 'Jewellery product'
+    productTitle = 'Jewellery product',
+    enable360 = false,
 }) => {
     const medusaImages: ProductImage[] = productImages.map((image, index) => ({
         id: image.id ?? `product-image-${index}`,
@@ -195,9 +44,14 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
         alt: image.alt ?? `${productTitle} - view ${index + 1}`,
         description: `${productTitle} product image`,
     }));
-    const images = medusaImages.length > 0
-        ? medusaImages
-        : PRODUCT_IMAGES_BY_METAL[selectedMetal] || PRODUCT_IMAGES_BY_METAL['yellow-gold'];
+    const images = medusaImages.length > 0 ? medusaImages : [{
+        id: 'image-unavailable',
+        url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="900" height="1100" viewBox="0 0 900 1100"%3E%3Crect width="900" height="1100" fill="%23F1ECE4"/%3E%3Ctext x="450" y="550" text-anchor="middle" dominant-baseline="middle" font-family="Arial,sans-serif" font-size="28" fill="%2378716C"%3EImage unavailable%3C/text%3E%3C/svg%3E',
+        title: 'Image unavailable',
+        category: 'front' as const,
+        alt: `${productTitle} image unavailable`,
+        description: 'Product image unavailable',
+    }];
     const [activeIndex, setActiveIndex] = useState(0);
     const [isZooming, setIsZooming] = useState(false);
     const [zoomCoords, setZoomCoords] = useState({ x: 0, y: 0, bgX: 50, bgY: 50 });
@@ -269,7 +123,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                 })}
 
                 {/* 360 Degree View Interactive Thumbnail */}
-                <button
+                {enable360 && <button
                     onClick={() => {
                         setIs360Active(true);
                         onOpen360Modal();
@@ -284,7 +138,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                     <RotateCcw className="w-5 h-5 mb-1 text-[#9E7D47] animate-spin-slow" />
                     <span className="text-[9px] font-semibold tracking-wider uppercase text-[#1C1917]">360° View</span>
                     <span className="text-[7.5px] text-[#78716C] mt-0.5">Turntable</span>
-                </button>
+                </button>}
             </div>
 
             {/* Primary High-Resolution Stage */}
@@ -369,7 +223,6 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                         onMouseEnter={() => setIsZooming(true)}
                         onMouseLeave={() => setIsZooming(false)}
                         onMouseMove={handleMouseMove}
-                        onClick={onOpen360Modal}
                         className="w-full h-full min-h-[420px] sm:min-h-[540px] lg:min-h-[640px] flex items-center justify-center cursor-crosshair overflow-hidden relative"
                     >
                         <img
@@ -400,18 +253,6 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
                             </div>
                         )}
 
-                        {/* Fullscreen Button */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onOpen360Modal();
-                            }}
-                            className="absolute bottom-4 right-4 z-20 bg-[#FFFFFF]/90 hover:bg-[#FFFFFF] text-[#57534E] hover:text-[#1C1917] p-2 rounded-full border border-[#E5DEC9] shadow-xs cursor-pointer transition-colors"
-                            title="Expand High-Resolution View"
-                            aria-label="Expand view"
-                        >
-                            <Maximize2 className="w-4 h-4" />
-                        </button>
                     </div>
                 )}
             </div>

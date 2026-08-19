@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, Gem, Ruler, Sparkles } from "lucide-react";
 
-export function ProductDetailsAccordion({ product, selectedVariant }: { product: any; selectedVariant: any; onOpenCertificateModal?: () => void; onOpenExchangeModal?: () => void }) {
+export function ProductDetailsAccordion({ product, selectedVariant }: { product: any; selectedVariant: any }) {
     const [open, setOpen] = useState<Record<string, boolean>>({ details: true, dimensions: false, care: false });
     const metadata = product.metadata ?? {};
     const details = [["SKU", selectedVariant?.sku], ["Collection", product.collection?.title], ["Category", product.categories?.map((item: any) => item.name).join(", ")], ["Material", product.material || metadata.material], ["Purity", metadata.purity], ["Country of origin", product.origin_country]];

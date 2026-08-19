@@ -17,8 +17,8 @@ export const TrustFeatures: React.FC<TrustFeaturesProps> = ({ onOpenCertificateM
       actionLabel: "View details",
       onClick: onOpenCertificateModal,
     } : null,
-    { icon: PackageCheck, title: "Secure packaging", subtitle: "Packed to protect your jewellery in transit" },
-    { icon: Truck, title: "Insured delivery", subtitle: "Shipment protection through delivery" },
+    { icon: PackageCheck, title: "Order preparation", subtitle: "Status is managed with your Medusa order" },
+    { icon: Truck, title: "Delivery options", subtitle: "Calculated for your address at checkout" },
     { icon: WalletCards, title: "Cash on delivery", subtitle: "Available when eligible at checkout" },
     { icon: ShieldCheck, title: "Secure checkout", subtitle: "Order totals are calculated by Medusa" },
   ].filter(Boolean) as Array<{ icon: typeof Award; title: string; subtitle: string; actionLabel?: string; onClick?: () => void }>;

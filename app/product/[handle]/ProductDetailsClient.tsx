@@ -4,11 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
-import { Interactive360Modal } from "@/app/components/modals/Interactive360Modal";
-import { OldGoldExchangeModal } from "@/app/components/modals/OldGoldExchangeModal";
 import { PriceBreakupModal } from "@/app/components/modals/PriceBreakupModal";
 import { SizeGuideModal } from "@/app/components/modals/SizeGuideModal";
-import { StoreAvailabilityModal } from "@/app/components/modals/StoreAvailabilityModal";
 import { WishlistDrawer } from "@/app/components/modals/WishlistDrawer";
 import { MobileStickyBar } from "@/app/components/product/MobileStickyBar";
 import { PriceBreakdown } from "@/app/components/product/PriceBreakdown";
@@ -64,13 +61,10 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
     // Modal Visibilities
     const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-    const [interactive360Open, setInteractive360Open] = useState(false);
     const [certificateModalOpen, setCertificateModalOpen] = useState(false);
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
     const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false);
-    const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
     const [priceBreakupModalOpen, setPriceBreakupModalOpen] = useState(false);
-    const [storeModalOpen, setStoreModalOpen] = useState(false);
 
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {}
@@ -106,23 +100,26 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
         setTimeout(() => setToastMessage(null), 3000);
     };
 
-    const handleAddToCart = async () => {
-        if (!selectedVariant?.id || !selectedVariantInStock || cartLoading) return;
+    const handleAddToCart = async (openDrawer = true) => {
+        if (!selectedVariant?.id || !selectedVariantInStock || cartLoading) return false;
         setCartLoading(true);
         try {
             const cart = await addToCart(selectedVariant.id);
             setCartItems(mapCartItems(cart));
             showToast(`Added ${product.title} (${selectedVariant.title}) to Bag`);
-            setCartDrawerOpen(true);
+            if (openDrawer) setCartDrawerOpen(true);
+            return true;
         } catch (error) {
             showToast(error instanceof Error ? error.message : 'Unable to add this item to the bag');
+            return false;
         } finally {
             setCartLoading(false);
         }
     };
 
-    const handleBuyNow = () => {
-        handleAddToCart();
+    const handleBuyNow = async () => {
+        const added = await handleAddToCart(false);
+        if (added) router.push("/checkout");
     };
 
     const handleHomeTrial = () => {
@@ -202,9 +199,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                             onOpenHomeTrial={handleHomeTrial}
                             onOpenPriceBreakdown={() => setPriceBreakupModalOpen(true)}
                             onOpenCertificateModal={() => setCertificateModalOpen(true)}
-                            onOpenExchangeModal={() => setExchangeModalOpen(true)}
-                            onOpenStoreModal={() => setStoreModalOpen(true)}
-                            onAddToCart={handleAddToCart}
+                            onAddToCart={() => void handleAddToCart()}
                             onBuyNow={handleBuyNow}
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
@@ -218,7 +213,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
                         {/* Delivery & Pincode Checker */}
                         <div className="pt-2">
-                            <DeliveryChecker onOpenStoreModal={() => setStoreModalOpen(true)} />
+                            <DeliveryChecker />
                         </div>
 
                         {/* Try at Home Feature in Right Rail for Desktop */}
@@ -244,8 +239,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                         <ProductDetailsAccordion
                             product={product}
                             selectedVariant={selectedVariant}
-                            onOpenCertificateModal={() => setCertificateModalOpen(true)}
-                            onOpenExchangeModal={() => setExchangeModalOpen(true)}
                         />
                     </div>
 
@@ -258,7 +251,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
             <MobileStickyBar
                 isWishlisted={isWishlisted}
                 onToggleWishlist={handleToggleWishlist}
-                onAddToCart={handleAddToCart}
+                onAddToCart={() => void handleAddToCart()}
                 onOpenHomeTrial={handleHomeTrial}
                 selectedMetal={selectedMetal}
                 selectedPurity={selectedPurity}
@@ -279,15 +272,11 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 onSelectSize={setSelectedSize}
             />
 
-            <Interactive360Modal
-                isOpen={interactive360Open}
-                onClose={() => setInteractive360Open(false)}
-                metal={selectedMetal}
-            />
-
             <CertificateModal
                 isOpen={certificateModalOpen}
                 onClose={() => setCertificateModalOpen(false)}
+                product={product}
+                selectedVariant={selectedVariant}
             />
 
             <CartDrawer
@@ -304,15 +293,9 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 onClose={() => setWishlistDrawerOpen(false)}
                 isMainProductWishlisted={isWishlisted}
                 onToggleMainWishlist={handleToggleWishlist}
-                onAddToCart={handleAddToCart}
+                onAddToCart={() => void handleAddToCart()}
                 onOpenHomeTrial={handleHomeTrial}
                 metal={selectedMetal}
-            />
-
-            <OldGoldExchangeModal
-                isOpen={exchangeModalOpen}
-                onClose={() => setExchangeModalOpen(false)}
-                targetProductPrice={price}
             />
 
             <PriceBreakupModal
@@ -323,11 +306,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 selectedPurity={selectedPurity}
             />
 
-            <StoreAvailabilityModal
-                isOpen={storeModalOpen}
-                onClose={() => setStoreModalOpen(false)}
-                onBookAppointment={handleHomeTrial}
-            />
         </div>
     );
 }

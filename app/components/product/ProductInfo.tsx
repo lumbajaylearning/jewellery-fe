@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Copy, Heart, Info, ShoppingBag, ShieldCheck, Store, Zap } from "lucide-react";
+import { Check, Copy, Heart, Info, ShoppingBag, ShieldCheck, Zap } from "lucide-react";
 import type { GoldPurity, MetalType } from "@/app/types/product";
 
 interface ProductInfoProps {
@@ -7,13 +7,13 @@ interface ProductInfoProps {
     selectedPurity: GoldPurity; onSelectPurity: (value: GoldPurity) => void;
     selectedSize: number; onSelectSize: (value: number) => void;
     onOpenSizeGuide: () => void; onOpenHomeTrial: () => void; onOpenPriceBreakdown: () => void;
-    onOpenCertificateModal: () => void; onOpenExchangeModal: () => void; onOpenStoreModal: () => void;
+    onOpenCertificateModal: () => void;
     onAddToCart: () => void; onBuyNow: () => void; isWishlisted: boolean; onToggleWishlist: () => void;
     onScrollToReviews: () => void; product: any; selectedVariant: any;
     selectedOptions: Record<string, string>; onOptionChange: (title: string, value: string) => void; cartLoading?: boolean;
 }
 
-export function ProductInfo({ product, selectedVariant, selectedOptions, onOptionChange, onOpenPriceBreakdown, onOpenCertificateModal, onOpenStoreModal, onAddToCart, onBuyNow, isWishlisted, onToggleWishlist, cartLoading = false }: ProductInfoProps) {
+export function ProductInfo({ product, selectedVariant, selectedOptions, onOptionChange, onOpenPriceBreakdown, onOpenCertificateModal, onAddToCart, onBuyNow, isWishlisted, onToggleWishlist, cartLoading = false }: ProductInfoProps) {
     const price = selectedVariant?.calculated_price;
     const amount = price?.calculated_amount ?? product.variants?.[0]?.calculated_price?.calculated_amount ?? 0;
     const originalAmount = price?.original_amount ?? amount;
@@ -50,6 +50,6 @@ export function ProductInfo({ product, selectedVariant, selectedOptions, onOptio
 
         {quickSpecs.length > 0 && <div className="grid grid-cols-1 gap-3 rounded border border-border bg-surface p-3 text-center sm:grid-cols-3 sm:gap-0">{quickSpecs.map(([label, value], index) => <div key={label} className={index ? "sm:border-l sm:border-border sm:px-2" : "sm:px-2"}><span className="block text-[10px] uppercase tracking-wider text-text-secondary">{label}</span><span className="mt-1 block truncate text-xs font-semibold text-text-primary">{value}</span></div>)}</div>}
 
-        <div className="space-y-3 pt-1"><div className="grid gap-3 sm:grid-cols-2"><button onClick={onAddToCart} disabled={cartLoading || !inStock || !amount} className="flex items-center justify-center gap-2 rounded bg-text-primary px-5 py-3.5 text-xs font-semibold text-white disabled:opacity-50"><ShoppingBag className="h-4 w-4 text-gold" />{cartLoading ? "Adding…" : "Add to Bag"}</button><button onClick={onBuyNow} disabled={cartLoading || !inStock || !amount} className="flex items-center justify-center gap-2 rounded bg-gold px-5 py-3.5 text-xs font-semibold text-white disabled:opacity-50"><Zap className="h-4 w-4" />Buy now</button></div><div className="grid gap-3 sm:grid-cols-2"><button onClick={onToggleWishlist} className={`flex items-center justify-center gap-2 rounded border px-4 py-2.5 text-xs font-semibold ${isWishlisted ? "border-gold bg-surface text-gold" : "border-border bg-white"}`}><Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />{isWishlisted ? "Wishlisted" : "Add to Wishlist"}</button><button onClick={onOpenStoreModal} className="flex items-center justify-center gap-2 rounded border border-border bg-white px-4 py-2.5 text-xs font-semibold"><Store className="h-4 w-4 text-gold" />Store availability</button></div></div>
+        <div className="space-y-3 pt-1"><div className="grid gap-3 sm:grid-cols-2"><button onClick={onAddToCart} disabled={cartLoading || !inStock || !amount} className="flex items-center justify-center gap-2 rounded bg-text-primary px-5 py-3.5 text-xs font-semibold text-white disabled:opacity-50"><ShoppingBag className="h-4 w-4 text-gold" />{cartLoading ? "Adding…" : "Add to Bag"}</button><button onClick={onBuyNow} disabled={cartLoading || !inStock || !amount} className="flex items-center justify-center gap-2 rounded bg-gold px-5 py-3.5 text-xs font-semibold text-white disabled:opacity-50"><Zap className="h-4 w-4" />Buy now</button></div><button onClick={onToggleWishlist} className={`flex w-full items-center justify-center gap-2 rounded border px-4 py-2.5 text-xs font-semibold ${isWishlisted ? "border-gold bg-surface text-gold" : "border-border bg-white"}`}><Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />{isWishlisted ? "Wishlisted" : "Add to Wishlist"}</button></div>
     </div>;
 }
