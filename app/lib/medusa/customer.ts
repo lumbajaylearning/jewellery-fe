@@ -33,6 +33,15 @@ export async function retrieveCustomer() {
     return customer;
 }
 
+export async function updateCustomerProfile(data: {
+    first_name: string;
+    last_name: string;
+    phone?: string;
+}) {
+    const { customer } = await medusa.store.customer.update(data);
+    return customer;
+}
+
 export async function logoutCustomer() {
     await medusa.auth.logout();
 }
