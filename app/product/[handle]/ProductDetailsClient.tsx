@@ -23,6 +23,8 @@ import { LIVE_GOLD_RATES } from "@/app/data/productData";
 import { CartItem, GoldPurity } from "@/app/types/product";
 import { addToCart, getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
 import { addHomeTrialItem } from "@/app/lib/home-trial";
+import { mapMedusaProduct } from "@/app/lib/medusa/products";
+import { isWishlisted as productIsWishlisted, toggleWishlist } from "@/app/lib/wishlist";
 
 interface ProductDetailsClientProps {
     product: any;
@@ -55,11 +57,12 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
 
     useEffect(() => {
         let active = true;
+        setIsWishlisted(productIsWishlisted(product.id));
         getOrCreateCart()
             .then((cart) => active && setCartItems(mapCartItems(cart)))
             .catch(() => undefined);
         return () => { active = false; };
-    }, []);
+    }, [product.id]);
 
     // Modal Visibilities
     const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
@@ -173,8 +176,9 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     };
 
     const handleToggleWishlist = () => {
-        setIsWishlisted(prev => !prev);
-        showToast(!isWishlisted ? 'Added Floral Ring to Wishlist' : 'Removed from Wishlist');
+        const result = toggleWishlist(mapMedusaProduct(product));
+        setIsWishlisted(result.added);
+        showToast(result.added ? `Added ${product.title} to Wishlist` : `Removed ${product.title} from Wishlist`);
     };
 
     const scrollToReviews = () => {
@@ -193,7 +197,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                         <ProductGallery
                             selectedMetal={selectedMetal}
                             isWishlisted={isWishlisted}
-                            onToggleWishlist={() => setIsWishlisted(!isWishlisted)}
+                            onToggleWishlist={handleToggleWishlist}
                             onOpen360Modal={() => { }}
                             onOpenCertificateModal={() => { }}
                             onOpenVirtualTryOn={() => { }}

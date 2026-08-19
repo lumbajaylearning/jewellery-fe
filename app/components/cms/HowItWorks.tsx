@@ -23,7 +23,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({
     steps,
 }) => {
     return (
-        <section className=" py-12 md:py-20 flex flex-col items-center text-center gap-12 md:gap-16">
+        <section id="how-it-works" className="scroll-mt-28 py-12 md:py-20 flex flex-col items-center text-center gap-12 md:gap-16">
 
             {/* Header Block */}
             <div className="space-y-3 max-w-2xl">

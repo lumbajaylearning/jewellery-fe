@@ -28,7 +28,7 @@ export default function ShopFilters({ categories, values, activeFilterCount }: P
         };
     }, [open]);
 
-    return <>
+    return <div id="shop-search" className="contents">
         <div className="mb-7 lg:hidden">
             <div className="flex gap-2">
                 <form action="/shop" className="relative min-w-0 flex-1">
@@ -74,7 +74,7 @@ export default function ShopFilters({ categories, values, activeFilterCount }: P
                 </form>
             </div>
         </div>}
-    </>;
+    </div>;
 }
 
 function SearchField({ defaultValue }: { defaultValue: string }) {

@@ -1,6 +1,23 @@
 import { medusa } from "./client";
 
 const CART_STORAGE_KEY = "medusa_cart_id";
+export const CART_UPDATED_EVENT = "medusa-cart-updated";
+
+function notifyCartUpdated(cart: any) {
+    window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: cart }));
+}
+
+export async function getExistingCart() {
+    const savedId = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!savedId) return null;
+    try {
+        const { cart } = await medusa.store.cart.retrieve(savedId);
+        return cart;
+    } catch {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+        return null;
+    }
+}
 
 export async function getOrCreateCart() {
     const savedId = window.localStorage.getItem(CART_STORAGE_KEY);
@@ -32,18 +49,21 @@ export async function addToCart(variantId: string, quantity = 1) {
         variant_id: variantId,
         quantity,
     });
+    notifyCartUpdated(response.cart);
     return response.cart;
 }
 
 export async function updateCartLineItem(lineItemId: string, quantity: number) {
     const cart = await getOrCreateCart();
     const response = await medusa.store.cart.updateLineItem(cart.id, lineItemId, { quantity });
+    notifyCartUpdated(response.cart);
     return response.cart;
 }
 
 export async function removeCartLineItem(lineItemId: string) {
     const cart = await getOrCreateCart();
     const response = await medusa.store.cart.deleteLineItem(cart.id, lineItemId);
+    notifyCartUpdated(response.parent);
     return response.parent;
 }
 
@@ -86,5 +106,6 @@ export async function completeCart() {
     }
 
     window.localStorage.removeItem(CART_STORAGE_KEY);
+    notifyCartUpdated(null);
     return result.order;
 }
