@@ -70,8 +70,7 @@ export async function getProduct(handle: string) {
     const { products } = await medusa.store.product.list(
         {
             handle,
-            // fields: "title,handle,description,*collections,*options,metadata"
-            fields: "*variants,*options,*categories,*metadata",
+            fields: "*variants.calculated_price,+variants.inventory_quantity,*variants.options,*options,*images,*categories,*collection,*metadata",
         }
     );
     return products[0];

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Star, Heart, Check, Sparkles, Ruler, ShieldCheck, Truck, RefreshCw, ShoppingBag, Info, Zap, Store, Copy, CheckCheck } from 'lucide-react';
 import { MetalType, GoldPurity, MetalOption, PurityOption } from '@/app/types/product';
 import { METALS, PURITY_OPTIONS, RING_SIZES, LIVE_GOLD_RATES, PRODUCT_SPECIFICATIONS } from '@/app/data/productData';
-import { addToCart } from '@/app/lib/medusa/cart';
 
 interface ProductInfoProps {
     selectedMetal: MetalType;
@@ -23,34 +22,11 @@ interface ProductInfoProps {
     onToggleWishlist: () => void;
     onScrollToReviews: () => void;
     product: any; // Add the product prop here
+    selectedVariant: any;
+    selectedOptions: Record<string, string>;
+    onOptionChange: (optionTitle: string, value: string) => void;
+    cartLoading?: boolean;
 }
-
-const AddToBagButton: React.FC<{ variantId: string }> = ({ variantId }) => {
-
-    const [loading, setLoading] = useState(false)
-
-    const handleAddToCart = async () => {
-        if (loading) return; // Prevent multiple clicks while loading
-        try {
-            setLoading(true)
-            await addToCart(variantId, 1)
-            alert("Added to bag!")
-        } catch (err) {
-            console.error("Failed to add item to bag:", err)
-        } finally {
-            setLoading(false)
-        }
-    }
-    return (
-        <button
-            onClick={handleAddToCart}
-            className="bg-[#1C1917] hover:bg-[#292524] text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide group"
-        >
-            <ShoppingBag className="w-4 h-4 text-[#C5A880] transition-transform group-hover:scale-110" />
-            <span>{loading ? "Adding..." : "Add to Bag"}</span>
-        </button>
-    )
-};
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
     selectedMetal,
@@ -70,17 +46,20 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     isWishlisted,
     onToggleWishlist,
     onScrollToReviews,
-    product
+    product,
+    selectedVariant,
+    selectedOptions,
+    onOptionChange,
+    cartLoading = false,
 }) => {
     const [copiedSku, setCopiedSku] = useState(false);
     const [copiedBankOffer, setCopiedBankOffer] = useState(false);
 
-    const karatOptions = product?.options?.find(({ title }) => title == 'Karatage')?.values || []
-    const metalOptions = product?.options?.find(({ title }) => title == 'Metal Tone')?.values || []
-    const ringSize = product?.options?.find(({ title }) => title == 'Ring Size')?.values || []
-    console.log(metalOptions)
-    const activeMetalObj: MetalOption = metalOptions.find(m => m.id === selectedMetal) || metalOptions?.[0]?.id;
-    const activePurityObj: PurityOption = karatOptions.find(p => p.id === selectedPurity) || karatOptions[0]?.id;
+    const karatOptions: any[] = product?.options?.find(({ title }: any) => title === 'Karatage')?.values || [];
+    const metalOptions: any[] = product?.options?.find(({ title }: any) => title === 'Metal Tone')?.values || [];
+    const ringSize: any[] = product?.options?.find(({ title }: any) => title === 'Ring Size')?.values || [];
+    const activeMetalObj = metalOptions.find((metal) => metal.id === selectedMetal) || metalOptions[0];
+    const activePurityObj = karatOptions.find((purity) => purity.id === selectedPurity) || karatOptions[0];
 
     // Dynamic price math
     const rate = LIVE_GOLD_RATES[selectedPurity] || 7850;
@@ -91,12 +70,25 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     const effectiveMaking = makingCharges - makingDiscount;
     const subtotal = goldVal + effectiveMaking;
     const gst = Math.round(subtotal * 0.03);
-    const finalPrice = subtotal + gst;
-    const originalMRP = Math.round(finalPrice * 1.12);
+    const calculatedPrice = selectedVariant?.calculated_price;
+    const finalPrice = calculatedPrice?.calculated_amount ?? (subtotal + gst);
+    const originalMRP = calculatedPrice?.original_amount ?? finalPrice;
     const savings = originalMRP - finalPrice;
+    const currencyCode = calculatedPrice?.currency_code ?? 'inr';
+    const selectedSku = selectedVariant?.sku || PRODUCT_SPECIFICATIONS.productCode;
+    const inStock = selectedVariant && (
+        selectedVariant.manage_inventory === false ||
+        selectedVariant.inventory_quantity == null ||
+        selectedVariant.inventory_quantity > 0
+    );
+    const formatMoney = (amount: number) => new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: currencyCode.toUpperCase(),
+        maximumFractionDigits: 0,
+    }).format(amount);
 
     const handleCopySku = () => {
-        navigator.clipboard?.writeText(PRODUCT_SPECIFICATIONS.productCode);
+        navigator.clipboard?.writeText(selectedSku);
         setCopiedSku(true);
         setTimeout(() => setCopiedSku(false), 2000);
     };
@@ -119,7 +111,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 <span>/</span>
                 <a href="#" className="hover:text-[#1C1917] transition-colors whitespace-nowrap">Gold Rings</a>
                 <span>/</span>
-                <span className="text-[#1C1917] font-medium truncate">Glorious 22 Karat Yellow Gold Floral Ring</span>
+                <span className="text-[#1C1917] font-medium truncate">{product.title}</span>
             </nav>
 
             {/* 2. Header & Title & Subtitle */}
@@ -141,7 +133,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                         className="text-xs text-[#78716C] hover:text-[#1C1917] font-mono flex items-center gap-1 cursor-pointer"
                         title="Click to copy Product Code"
                     >
-                        <span>SKU: {PRODUCT_SPECIFICATIONS.productCode}</span>
+                        <span>SKU: {selectedSku}</span>
                         {copiedSku ? (
                             <CheckCheck className="w-3.5 h-3.5 text-[#047857]" />
                         ) : (
@@ -191,17 +183,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                     <div className="space-y-1">
                         <div className="flex items-baseline gap-2.5 flex-wrap">
                             <span className="text-2xl sm:text-3xl font-serif font-bold text-[#1C1917]">
-                                ₹{finalPrice.toLocaleString('en-IN')}
+                                {formatMoney(finalPrice)}
                             </span>
-                            <span className="text-sm text-[#78716C] line-through font-light">
-                                ₹{originalMRP.toLocaleString('en-IN')}
-                            </span>
-                            <span className="text-xs text-[#047857] font-semibold bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#A7F3D0]">
-                                Save ₹{savings.toLocaleString('en-IN')} (10% OFF)
-                            </span>
+                            {originalMRP > finalPrice && <>
+                                <span className="text-sm text-[#78716C] line-through font-light">{formatMoney(originalMRP)}</span>
+                                <span className="text-xs text-[#047857] font-semibold bg-[#ECFDF5] px-2 py-0.5 rounded border border-[#A7F3D0]">Save {formatMoney(savings)}</span>
+                            </>}
                         </div>
                         <p className="text-[11px] text-[#78716C]">
-                            MRP inclusive of 3% GST • Live {selectedPurity} Gold Rate: ₹{rate.toLocaleString('en-IN')}/g
+                            Price supplied by Medusa for the selected variant
                         </p>
                     </div>
 
@@ -231,8 +221,37 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 </div>
             </div>
 
+            <div className="space-y-4">
+                {product.options?.map((option: any) => (
+                    <div key={option.id} className="space-y-2.5">
+                        <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
+                            {option.title}: <span className="font-normal text-[#57534E]">{selectedOptions[option.title]}</span>
+                        </label>
+                        <div className="flex flex-wrap gap-2.5">
+                            {option.values?.map((optionValue: any) => {
+                                const selected = selectedOptions[option.title] === optionValue.value;
+                                return (
+                                    <button
+                                        key={optionValue.id}
+                                        type="button"
+                                        onClick={() => onOptionChange(option.title, optionValue.value)}
+                                        className={`min-w-20 rounded border px-3 py-2.5 text-xs font-medium transition-all ${selected
+                                            ? 'border-[#9E7D47] bg-[#F7F3EB] ring-1 ring-[#9E7D47] text-[#1C1917]'
+                                            : 'border-[#E5DEC9] bg-white text-[#57534E] hover:border-[#9E7D47]'}`}
+                                    >
+                                        {optionValue.value}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+                {!selectedVariant && <p className="text-xs text-rose-700">This option combination is unavailable.</p>}
+                {selectedVariant && !inStock && <p className="text-xs text-rose-700">This variant is currently out of stock.</p>}
+            </div>
+
             {/* 4. Gold Karatage / Purity Customization (Tanishq Hallmark Selector) */}
-            <div className="space-y-2.5">
+            <div className="hidden space-y-2.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
                         Gold Karatage: <span className="font-normal text-[#57534E]">{activePurityObj?.name}</span>
@@ -270,7 +289,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             </div>
 
             {/* 5. Metal Color Selection */}
-            <div className="space-y-2.5">
+            <div className="hidden space-y-2.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
                         Metal Tone: <span className="font-normal text-[#57534E] capitalize">{activeMetalObj?.name}</span>
@@ -325,7 +344,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             </div>
 
             {/* 7. Ring Size Selection */}
-            <div className="space-y-2.5">
+            <div className="hidden space-y-2.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">
                         Ring Size (Indian): <span className="font-normal text-[#57534E]">Size {selectedSize}</span>
@@ -372,11 +391,19 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                     {/* Add to Bag CTA */}
 
 
-                    <AddToBagButton variantId={product.variants?.[0].id} />
+                    <button
+                        onClick={onAddToCart}
+                        disabled={cartLoading || !inStock}
+                        className="bg-[#1C1917] hover:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide group"
+                    >
+                        <ShoppingBag className="w-4 h-4 text-[#C5A880] transition-transform group-hover:scale-110" />
+                        <span>{cartLoading ? 'Adding…' : 'Add to Bag'}</span>
+                    </button>
                     {/* Buy Now CTA */}
                     <button
                         onClick={onBuyNow}
-                        className="bg-[#9E7D47] hover:bg-[#8A6C3B] text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide"
+                        disabled={cartLoading || !inStock}
+                        className="bg-[#9E7D47] hover:bg-[#8A6C3B] disabled:cursor-not-allowed disabled:opacity-50 text-[#FAF8F4] font-semibold py-3.5 px-5 rounded transition-all duration-200 shadow-md hover:shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs sm:text-sm tracking-wide"
                     >
                         <Zap className="w-4 h-4 text-[#FAF8F4]" />
                         <span>Buy Now</span>

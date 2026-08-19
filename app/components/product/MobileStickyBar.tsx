@@ -11,6 +11,8 @@ interface MobileStickyBarProps {
   selectedMetal: MetalType;
   selectedPurity?: GoldPurity;
   selectedSize: number;
+  price?: number;
+  disabled?: boolean;
 }
 
 export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
@@ -20,7 +22,9 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
   onOpenHomeTrial,
   selectedMetal,
   selectedPurity = '22K',
-  selectedSize
+  selectedSize,
+  price,
+  disabled = false,
 }) => {
   const rate = LIVE_GOLD_RATES[selectedPurity] || 7850;
   const netWeight = 1.890;
@@ -28,7 +32,7 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
   const makingCharges = Math.round(goldVal * 0.28);
   const makingDiscount = Math.round(makingCharges * 0.15);
   const subtotal = goldVal + (makingCharges - makingDiscount);
-  const finalPrice = subtotal + Math.round(subtotal * 0.03);
+  const finalPrice = price ?? (subtotal + Math.round(subtotal * 0.03));
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F4]/95 backdrop-blur-md border-t border-[#E5DEC9] p-3 shadow-2xl lg:hidden">
@@ -57,7 +61,8 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
         {/* Primary Add to Bag Button */}
         <button
           onClick={onAddToCart}
-          className="flex-1 bg-[#1C1917] active:bg-[#292524] text-[#FAF8F4] py-3 px-4 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-between shadow-xs cursor-pointer"
+          disabled={disabled}
+          className="flex-1 bg-[#1C1917] active:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 text-[#FAF8F4] py-3 px-4 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-between shadow-xs cursor-pointer"
         >
           <span className="flex items-center gap-1.5 font-bold">
             <ShoppingBag className="w-3.5 h-3.5 text-[#C5A880]" />

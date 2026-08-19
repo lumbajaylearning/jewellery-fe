@@ -173,7 +173,8 @@ interface ProductGalleryProps {
     onOpen360Modal: () => void;
     onOpenCertificateModal: () => void;
     onOpenVirtualTryOn?: () => void;
-    images?: ProductImage[];
+    images?: Array<{ id?: string; url: string; title?: string; alt?: string }>;
+    productTitle?: string;
 }
 
 export const ProductGallery: React.FC<ProductGalleryProps> = ({
@@ -183,9 +184,20 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({
     onOpen360Modal,
     onOpenCertificateModal,
     onOpenVirtualTryOn,
-    images = []
+    images: productImages = [],
+    productTitle = 'Jewellery product'
 }) => {
-    // const images: ProductImage[] = PRODUCT_IMAGES_BY_METAL[selectedMetal] || PRODUCT_IMAGES_BY_METAL['yellow-gold'];
+    const medusaImages: ProductImage[] = productImages.map((image, index) => ({
+        id: image.id ?? `product-image-${index}`,
+        url: image.url,
+        title: image.title ?? (index === 0 ? 'Product view' : `Product view ${index + 1}`),
+        category: index === 0 ? 'front' : 'lifestyle',
+        alt: image.alt ?? `${productTitle} - view ${index + 1}`,
+        description: `${productTitle} product image`,
+    }));
+    const images = medusaImages.length > 0
+        ? medusaImages
+        : PRODUCT_IMAGES_BY_METAL[selectedMetal] || PRODUCT_IMAGES_BY_METAL['yellow-gold'];
     const [activeIndex, setActiveIndex] = useState(0);
     const [isZooming, setIsZooming] = useState(false);
     const [zoomCoords, setZoomCoords] = useState({ x: 0, y: 0, bgX: 50, bgY: 50 });

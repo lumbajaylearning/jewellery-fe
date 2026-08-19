@@ -22,8 +22,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   if (!isOpen) return null;
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const gst = Math.round(subtotal * 0.03);
-  const total = subtotal + gst;
+  const total = subtotal;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
@@ -83,10 +82,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </button>
                       </div>
                       <p className="text-[11px] text-[#78716C]">
-                        {item.metalName} • Size {item.size}
-                      </p>
-                      <p className="text-[10px] text-[#047857] font-semibold">
-                        ✓ IGI Certified & BIS Hallmarked
+                        {item.metalName}{item.size > 0 ? ` • Size ${item.size}` : ''}
                       </p>
                     </div>
 
@@ -150,8 +146,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span className="text-[#047857] font-semibold">FREE</span>
               </div>
               <div className="flex justify-between">
-                <span>Estimated GST (3%)</span>
-                <span className="font-mono text-[#1C1917] font-medium">₹{gst.toLocaleString('en-IN')}</span>
+                <span>Taxes</span>
+                <span className="font-mono text-[#1C1917] font-medium">Calculated at checkout</span>
               </div>
               <div className="flex justify-between text-sm font-semibold text-[#1C1917] pt-1.5 border-t border-[#E5DEC9]">
                 <span>Total Amount</span>

@@ -1,32 +1,48 @@
 import { medusa } from "./client";
 
-// 1. Get or create a Medusa Cart ID
-export async function getOrCreateCartId(): Promise<string | null> {
-    let cartId = typeof window !== "undefined" ? localStorage.getItem("medusa_cart_id") : null
+const CART_STORAGE_KEY = "medusa_cart_id";
 
-    if (!cartId) {
-        const { cart } = await medusa.store.cart.create({
-            region_id: "reg_01KZXZ7PNYP47GAT5PR5S3H2RX", // Optional: specify your region ID
-        })
-        cartId = cart.id
-        if (typeof window !== "undefined" && cartId) {
-            localStorage.setItem("medusa_cart_id", cartId)
+export async function getOrCreateCart() {
+    const savedId = window.localStorage.getItem(CART_STORAGE_KEY);
+
+    if (savedId) {
+        try {
+            const { cart } = await medusa.store.cart.retrieve(savedId);
+            return cart;
+        } catch {
+            window.localStorage.removeItem(CART_STORAGE_KEY);
         }
     }
 
-    return cartId
+    const { regions } = await medusa.store.region.list({ limit: 1 });
+    const region = regions[0];
+
+    if (!region) {
+        throw new Error("No Medusa sales region is configured.");
+    }
+
+    const { cart } = await medusa.store.cart.create({ region_id: region.id });
+    window.localStorage.setItem(CART_STORAGE_KEY, cart.id);
+    return cart;
 }
 
-// 2. Add an item variant to the cart
-export async function addToCart(variantId: string, quantity: number = 1) {
-    const cartId = await getOrCreateCartId()
+export async function addToCart(variantId: string, quantity = 1) {
+    const cart = await getOrCreateCart();
+    const response = await medusa.store.cart.createLineItem(cart.id, {
+        variant_id: variantId,
+        quantity,
+    });
+    return response.cart;
+}
 
-    if (cartId) {
-        const { cart } = await medusa.store.cart.createLineItem(cartId, {
-            variant_id: variantId,
-            quantity,
-        })
+export async function updateCartLineItem(lineItemId: string, quantity: number) {
+    const cart = await getOrCreateCart();
+    const response = await medusa.store.cart.updateLineItem(cart.id, lineItemId, { quantity });
+    return response.cart;
+}
 
-        return cart
-    }
+export async function removeCartLineItem(lineItemId: string) {
+    const cart = await getOrCreateCart();
+    const response = await medusa.store.cart.deleteLineItem(cart.id, lineItemId);
+    return response.parent;
 }
