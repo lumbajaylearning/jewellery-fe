@@ -1,6 +1,6 @@
 import { Info, ShieldCheck } from "lucide-react";
 
-export function PriceBreakdown({ product, selectedVariant }: { product: any; selectedVariant: any; selectedPurity?: any }) {
+export function PriceBreakdown({ product, selectedVariant }: { product: any; selectedVariant: any }) {
     const price = selectedVariant?.calculated_price ?? product.variants?.[0]?.calculated_price;
     const amount = price?.calculated_amount ?? 0;
     const original = price?.original_amount ?? amount;

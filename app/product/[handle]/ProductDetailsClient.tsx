@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
 import { PriceBreakupModal } from "@/app/components/modals/PriceBreakupModal";
-import { SizeGuideModal } from "@/app/components/modals/SizeGuideModal";
-import { WishlistDrawer } from "@/app/components/modals/WishlistDrawer";
 import { MobileStickyBar } from "@/app/components/product/MobileStickyBar";
 import { PriceBreakdown } from "@/app/components/product/PriceBreakdown";
 import { ProductDetailsAccordion } from "@/app/components/product/ProductDetailsAccordion";
-import { MetalType, ProductGallery } from "@/app/components/product/ProductGallery";
+import { ProductGallery } from "@/app/components/product/ProductGallery";
 import { ProductInfo } from "@/app/components/product/ProductInfo";
 import { DeliveryChecker } from "@/app/components/shared/DeliveryChecker";
 import { TrustFeatures } from "@/app/components/shared/TrustFeatures";
 import { TryAtHomeSection } from "@/app/components/shared/TryAtHomeSection";
-import { CartItem, GoldPurity } from "@/app/types/product";
+import { CartItem } from "@/app/types/product";
 import { addToCart, getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
 import { addHomeTrialItem } from "@/app/lib/home-trial";
 import { mapMedusaProduct } from "@/app/lib/medusa/products";
@@ -27,10 +25,6 @@ interface ProductDetailsClientProps {
 
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
     const router = useRouter();
-    // Product Configurator States
-    const [selectedMetal, setSelectedMetal] = useState<MetalType>('yellow-gold');
-    const [selectedPurity, setSelectedPurity] = useState<GoldPurity>('22K');
-    const [selectedSize, setSelectedSize] = useState<number>(8);
     const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [cartLoading, setCartLoading] = useState(false);
@@ -41,7 +35,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     const mapCartItems = (cart: any): CartItem[] => (cart?.items ?? []).map((item: any) => ({
         id: item.id,
         title: item.product_title ?? item.title,
-        metal: 'yellow-gold',
         metalName: item.variant_title ?? 'Selected variant',
         size: Number(item.metadata?.size ?? 0),
         price: item.unit_price ?? 0,
@@ -60,10 +53,8 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     }, [product.id]);
 
     // Modal Visibilities
-    const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
     const [certificateModalOpen, setCertificateModalOpen] = useState(false);
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
-    const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false);
     const [priceBreakupModalOpen, setPriceBreakupModalOpen] = useState(false);
 
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
@@ -176,12 +167,8 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                     {/* Left Column: Product Gallery */}
                     <div className="lg:col-span-7 lg:sticky lg:top-6 self-start w-full">
                         <ProductGallery
-                            selectedMetal={selectedMetal}
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
-                            onOpen360Modal={() => { }}
-                            onOpenCertificateModal={() => { }}
-                            onOpenVirtualTryOn={() => { }}
                             images={product?.images || []}
                             productTitle={product.title}
                         />
@@ -189,21 +176,12 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                     {/* Right Column: Product Details */}
                     <div className="lg:col-span-5 w-full space-y-6">
                         <ProductInfo
-                            selectedMetal={selectedMetal}
-                            onSelectMetal={setSelectedMetal}
-                            selectedPurity={selectedPurity}
-                            onSelectPurity={setSelectedPurity}
-                            selectedSize={selectedSize}
-                            onSelectSize={setSelectedSize}
-                            onOpenSizeGuide={() => setSizeGuideOpen(true)}
-                            onOpenHomeTrial={handleHomeTrial}
                             onOpenPriceBreakdown={() => setPriceBreakupModalOpen(true)}
                             onOpenCertificateModal={() => setCertificateModalOpen(true)}
                             onAddToCart={() => void handleAddToCart()}
                             onBuyNow={handleBuyNow}
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
-                            onScrollToReviews={() => undefined}
                             product={product}
                             selectedVariant={selectedVariant}
                             selectedOptions={selectedOptions}
@@ -243,7 +221,7 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                     </div>
 
                     <div id="price-breakdown-section" className="lg:col-span-5">
-                        <PriceBreakdown product={product} selectedVariant={selectedVariant} selectedPurity={selectedPurity} />
+                        <PriceBreakdown product={product} selectedVariant={selectedVariant} />
                     </div>
                 </div>
 
@@ -253,9 +231,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 onToggleWishlist={handleToggleWishlist}
                 onAddToCart={() => void handleAddToCart()}
                 onOpenHomeTrial={handleHomeTrial}
-                selectedMetal={selectedMetal}
-                selectedPurity={selectedPurity}
-                selectedSize={selectedSize}
                 price={price}
                 disabled={cartLoading || !selectedVariantInStock}
             />
@@ -265,13 +240,6 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 </div>
             )}
             {/* Modals & Drawers */}
-            <SizeGuideModal
-                isOpen={sizeGuideOpen}
-                onClose={() => setSizeGuideOpen(false)}
-                selectedSize={selectedSize}
-                onSelectSize={setSelectedSize}
-            />
-
             <CertificateModal
                 isOpen={certificateModalOpen}
                 onClose={() => setCertificateModalOpen(false)}
@@ -288,22 +256,11 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 onOpenHomeTrial={handleHomeTrial}
             />
 
-            <WishlistDrawer
-                isOpen={wishlistDrawerOpen}
-                onClose={() => setWishlistDrawerOpen(false)}
-                isMainProductWishlisted={isWishlisted}
-                onToggleMainWishlist={handleToggleWishlist}
-                onAddToCart={() => void handleAddToCart()}
-                onOpenHomeTrial={handleHomeTrial}
-                metal={selectedMetal}
-            />
-
             <PriceBreakupModal
                 isOpen={priceBreakupModalOpen}
                 onClose={() => setPriceBreakupModalOpen(false)}
                 product={product}
                 selectedVariant={selectedVariant}
-                selectedPurity={selectedPurity}
             />
 
         </div>

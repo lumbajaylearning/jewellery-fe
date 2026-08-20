@@ -1,15 +1,11 @@
 import Link from "next/link";
 import { Check, Copy, Heart, Info, ShoppingBag, ShieldCheck, Zap } from "lucide-react";
-import type { GoldPurity, MetalType } from "@/app/types/product";
 
 interface ProductInfoProps {
-    selectedMetal: MetalType; onSelectMetal: (value: MetalType) => void;
-    selectedPurity: GoldPurity; onSelectPurity: (value: GoldPurity) => void;
-    selectedSize: number; onSelectSize: (value: number) => void;
-    onOpenSizeGuide: () => void; onOpenHomeTrial: () => void; onOpenPriceBreakdown: () => void;
+    onOpenPriceBreakdown: () => void;
     onOpenCertificateModal: () => void;
     onAddToCart: () => void; onBuyNow: () => void; isWishlisted: boolean; onToggleWishlist: () => void;
-    onScrollToReviews: () => void; product: any; selectedVariant: any;
+    product: any; selectedVariant: any;
     selectedOptions: Record<string, string>; onOptionChange: (title: string, value: string) => void; cartLoading?: boolean;
 }
 

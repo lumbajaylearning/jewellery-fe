@@ -1,15 +1,11 @@
 import React from 'react';
 import { Heart, ShoppingBag, Sparkles } from 'lucide-react';
-import { MetalType, GoldPurity } from '@/app/types/product';
 
 interface MobileStickyBarProps {
   isWishlisted: boolean;
   onToggleWishlist: () => void;
   onAddToCart: () => void;
   onOpenHomeTrial: () => void;
-  selectedMetal: MetalType;
-  selectedPurity?: GoldPurity;
-  selectedSize: number;
   price?: number;
   disabled?: boolean;
 }
@@ -19,9 +15,6 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
   onToggleWishlist,
   onAddToCart,
   onOpenHomeTrial,
-  selectedMetal,
-  selectedPurity = '22K',
-  selectedSize,
   price,
   disabled = false,
 }) => {

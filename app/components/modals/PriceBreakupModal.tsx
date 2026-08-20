@@ -1,6 +1,6 @@
 import { Info, X } from "lucide-react";
 
-export function PriceBreakupModal({ isOpen, onClose, product, selectedVariant }: { isOpen: boolean; onClose: () => void; product: any; selectedVariant: any; selectedPurity?: any }) {
+export function PriceBreakupModal({ isOpen, onClose, product, selectedVariant }: { isOpen: boolean; onClose: () => void; product: any; selectedVariant: any }) {
     if (!isOpen) return null;
     const price = selectedVariant?.calculated_price ?? product.variants?.[0]?.calculated_price;
     const amount = price?.calculated_amount ?? 0;

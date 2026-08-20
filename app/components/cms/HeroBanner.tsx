@@ -57,11 +57,6 @@ export default function HeroBanner({
                     )}
                 </div>
 
-                <div className="pt-2">
-                    <div className="text-sm text-black">★★★★★ <span className="font-semibold text-xs ml-1">4.9/5</span></div>
-                    <p className="text-xs text-gray-500">Loved by 20,000+ customers</p>
-                </div>
-
             </div>
 
             <div className="relative w-full md:w-[48%] h-[320px] sm:h-[420px] md:h-[520px] overflow-hidden rounded-sm">

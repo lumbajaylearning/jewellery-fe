@@ -51,7 +51,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <ShoppingBag className="w-12 h-12 text-[#D8CEBE] mx-auto stroke-1" />
               <p className="font-serif text-lg text-[#1C1917]">Your bag is empty</p>
               <p className="text-xs text-[#78716C] max-w-xs mx-auto">
-                Explore our fine solitaire rings or book a complimentary trial at home.
+                Explore the collection or shortlist an eligible piece for a home trial.
               </p>
               <button
                 onClick={onClose}
@@ -142,16 +142,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <span>Subtotal</span>
                 <span className="font-mono text-[#1C1917] font-medium">₹{subtotal.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Insured Shipping</span>
-                <span className="text-[#047857] font-semibold">FREE</span>
+              <div className="flex justify-between gap-4">
+                <span>Shipping</span>
+                <span className="text-right text-[#1C1917]">Calculated at checkout</span>
               </div>
               <div className="flex justify-between">
                 <span>Taxes</span>
                 <span className="font-mono text-[#1C1917] font-medium">Calculated at checkout</span>
               </div>
               <div className="flex justify-between text-sm font-semibold text-[#1C1917] pt-1.5 border-t border-[#E5DEC9]">
-                <span>Total Amount</span>
+                <span>Estimated subtotal</span>
                 <span className="font-serif text-base text-[#1C1917]">₹{total.toLocaleString('en-IN')}</span>
               </div>
             </div>
@@ -161,13 +161,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               onClick={onClose}
               className="w-full bg-[#1C1917] hover:bg-[#292524] text-[#FAF8F4] py-3.5 rounded text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-xs"
             >
-              <span>Proceed to Secure Checkout</span>
+              <span>Review Shopping Bag</span>
               <ArrowRight className="w-4 h-4 text-[#FAF8F4]" />
             </Link>
 
             <div className="flex items-center justify-center gap-2 text-[10.5px] text-[#78716C]">
               <ShieldCheck className="w-3.5 h-3.5 text-[#047857]" />
-              <span>100% Insured Delivery • 15-Day Return Guarantee</span>
+              <span>Cart and checkout totals are managed by Medusa</span>
             </div>
           </div>
         )}
