@@ -2,97 +2,183 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import SiteShell from "@/app/components/site-shell";
-import { Badge, Button, CartProgress, SectionHeading } from "@/app/components/ui";
+import { Minus, Plus, ShieldCheck, ShoppingBag, Sparkles, Trash2 } from "lucide-react";
+import { getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
+import { writeHomeTrialItems } from "@/app/lib/home-trial";
 
-interface CartItem {
-    id: number;
-    name: string;
-    price: number;
-    note: string;
+type MedusaCart = any;
+
+function formatMoney(amount: number, currencyCode: string) {
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: currencyCode.toUpperCase(),
+        maximumFractionDigits: 0,
+    }).format(amount);
 }
 
-const fallbackItems: CartItem[] = [
-    { id: 1, name: "Sculpted pearl drop", price: 14800, note: "18k vermeil • bridal edit" },
-    { id: 2, name: "Contour diamond ring", price: 12200, note: "Wedding season • 18k gold" },
-    { id: 3, name: "Lattice cuff bracelet", price: 9400, note: "Everyday wear • versatile" },
-];
-
 export default function CartPage() {
-    const [items, setItems] = useState<CartItem[]>(fallbackItems);
+    const [cart, setCart] = useState<MedusaCart | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [updatingItemId, setUpdatingItemId] = useState<string | null>(null);
 
     useEffect(() => {
-        try {
-            const stored = window.localStorage.getItem("consultation-cart");
-            if (stored) {
-                const parsed = JSON.parse(stored) as CartItem[];
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    setItems(parsed);
+        let active = true;
+
+        getOrCreateCart()
+            .then((nextCart) => {
+                if (active) setCart(nextCart);
+            })
+            .catch((caughtError) => {
+                if (active) {
+                    setError(caughtError instanceof Error ? caughtError.message : "Unable to load your shopping bag.");
                 }
-            }
-        } catch {
-            // ignore storage failures and keep the fallback items
-        }
+            })
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => { active = false; };
     }, []);
 
-    const total = useMemo(() => items.reduce((sum, item) => sum + item.price, 0), [items]);
+    const items = cart?.items ?? [];
+    const currencyCode = cart?.currency_code ?? "inr";
+    const itemCount = useMemo(
+        () => items.reduce((count: number, item: any) => count + item.quantity, 0),
+        [items]
+    );
+    const subtotal = cart?.subtotal ?? items.reduce(
+        (sum: number, item: any) => sum + (item.unit_price ?? 0) * item.quantity,
+        0
+    );
+    const discountTotal = cart?.discount_total ?? 0;
+    const shippingTotal = cart?.shipping_total ?? 0;
+    const taxTotal = cart?.tax_total ?? 0;
+    const hasShippingMethod = Boolean(cart?.shipping_methods?.length);
+    const total = cart?.total ?? subtotal;
 
-    const removeItem = (id: number) => {
-        const nextItems = items.filter((item) => item.id !== id);
-        setItems(nextItems);
-        window.localStorage.setItem("consultation-cart", JSON.stringify(nextItems));
+    const updateQuantity = async (lineItemId: string, quantity: number) => {
+        if (updatingItemId) return;
+        setUpdatingItemId(lineItemId);
+        setError(null);
+
+        try {
+            const nextCart = quantity < 1
+                ? await removeCartLineItem(lineItemId)
+                : await updateCartLineItem(lineItemId, quantity);
+            setCart(nextCart);
+        } catch (caughtError) {
+            setError(caughtError instanceof Error ? caughtError.message : "Unable to update your shopping bag.");
+        } finally {
+            setUpdatingItemId(null);
+        }
     };
 
+    const prepareHomeTrial = () => {
+        writeHomeTrialItems(items.slice(0, 4).map((item: any) => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            title: item.product_title ?? item.title,
+            variant_title: item.variant_title,
+            thumbnail: item.thumbnail,
+            price: item.unit_price,
+            currency_code: currencyCode,
+        })));
+    };
+
+    if (loading) {
+        return (
+            <main className="mx-auto flex min-h-[55vh] w-full max-w-7xl items-center justify-center px-5">
+                <p className="text-sm text-text-secondary">Loading your shopping bag…</p>
+            </main>
+        );
+    }
+
     return (
-        <SiteShell activePage="/cart" cartCount={3}>
-            <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                        <Badge label="Consultation cart" tone="gold" />
-                        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-900">Your shortlist for the home visit.</h1>
-                        <p className="mt-4 max-w-2xl text-lg leading-8 text-stone-600">
-                            This is a preview list of the pieces you want your representative to bring. You can add up to four pieces before booking.
-                        </p>
-                    </div>
-                    <Button href={items.length > 0 ? "/book" : "/category"} variant="primary">
-                        {items.length > 0 ? "Book a home visit" : "Browse collections"}
-                    </Button>
+        <main className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
+            <div className="mb-10 flex flex-col gap-4 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Shopping bag</p>
+                    <h1 className="mt-3 font-heading text-4xl text-text-primary sm:text-5xl">Your selected jewellery.</h1>
+                    <p className="mt-3 text-sm text-text-secondary">
+                        {itemCount > 0 ? `${itemCount} ${itemCount === 1 ? "piece" : "pieces"} ready for checkout.` : "Your bag is waiting for something special."}
+                    </p>
                 </div>
-            </section>
+                <Link href="/shop" className="text-sm font-semibold text-text-primary underline decoration-border underline-offset-4">
+                    Continue shopping
+                </Link>
+            </div>
 
-            <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-                <div className="space-y-4 rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
-                    <SectionHeading eyebrow="Selected pieces" title="Up to four items at once" />
-                    <div className="mt-4 space-y-4">
-                        {items.length > 0 ? items.map((item) => (
-                            <div key={item.id} className="flex flex-col gap-4 rounded-[1.5rem] border border-stone-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-stone-900">{item.name}</h3>
-                                    <p className="mt-2 text-sm text-stone-600">{item.note}</p>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-sm font-semibold text-stone-900">₹{item.price.toLocaleString("en-IN")}</span>
-                                    <button onClick={() => removeItem(item.id)} className="rounded-full border border-stone-300 px-3 py-2 text-sm text-stone-600">Remove</button>
-                                </div>
-                            </div>
-                        )) : (
-                            <p className="text-sm text-stone-600">Your consultation cart is empty. Browse the collection to add pieces.</p>
-                        )}
-                    </div>
+            {error && (
+                <div role="alert" className="mb-6 rounded border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                    {error}
                 </div>
+            )}
 
-                <div className="space-y-6 rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
-                    <SectionHeading eyebrow="Preview total" title="Indicative soft cap" />
-                    <CartProgress total={total} cap={20000} />
-                    <div className="rounded-[1.5rem] border border-stone-200 bg-white p-5 text-sm leading-7 text-stone-600">
-                        <p className="font-semibold text-stone-900">Need a fifth piece?</p>
-                        <p className="mt-2">We keep the consultation focused. If you want to add another item, you can book a second visit after the first consultation.</p>
-                    </div>
-                    <Link href="/category" className="inline-flex text-sm font-semibold text-stone-900 underline decoration-stone-300 underline-offset-4">
-                        Continue browsing collections
+            {items.length === 0 ? (
+                <section className="flex min-h-96 flex-col items-center justify-center rounded border border-border bg-white px-6 text-center">
+                    <ShoppingBag className="h-12 w-12 stroke-1 text-gold" />
+                    <h2 className="mt-5 font-heading text-3xl text-text-primary">Your bag is empty.</h2>
+                    <p className="mt-3 max-w-md text-sm leading-6 text-text-secondary">Explore the collection, select an available Medusa variant, and it will appear here.</p>
+                    <Link href="/shop" className="mt-6 rounded bg-text-primary px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white">
+                        Explore jewellery
                     </Link>
+                </section>
+            ) : (
+                <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+                    <section className="space-y-4">
+                        {items.map((item: any) => {
+                            const busy = updatingItemId === item.id;
+                            return (
+                                <article key={item.id} className="grid grid-cols-[96px_minmax(0,1fr)] gap-4 rounded border border-border bg-white p-4 sm:grid-cols-[128px_minmax(0,1fr)_auto] sm:gap-6 sm:p-5">
+                                    <div className="aspect-[4/5] overflow-hidden rounded bg-surface">
+                                        {item.thumbnail ? <img src={item.thumbnail} alt={item.product_title ?? item.title} className="h-full w-full object-cover" /> : null}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold">{item.variant_title ?? "Selected variant"}</p>
+                                        <h2 className="mt-2 font-heading text-xl text-text-primary sm:text-2xl">{item.product_title ?? item.title}</h2>
+                                        {item.variant_sku && <p className="mt-2 text-xs text-text-secondary">SKU: {item.variant_sku}</p>}
+                                        <p className="mt-4 font-heading text-lg font-semibold text-text-primary sm:hidden">
+                                            {formatMoney(item.total ?? (item.unit_price ?? 0) * item.quantity, currencyCode)}
+                                        </p>
+                                        <div className="mt-5 flex flex-wrap items-center gap-4">
+                                            <div className="flex items-center rounded border border-border bg-surface">
+                                                <button disabled={busy} onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2.5 disabled:opacity-40" aria-label="Decrease quantity"><Minus className="h-3.5 w-3.5" /></button>
+                                                <span className="min-w-9 text-center text-xs font-semibold">{item.quantity}</span>
+                                                <button disabled={busy} onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-2.5 disabled:opacity-40" aria-label="Increase quantity"><Plus className="h-3.5 w-3.5" /></button>
+                                            </div>
+                                            <button disabled={busy} onClick={() => updateQuantity(item.id, 0)} className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-rose-700 disabled:opacity-40">
+                                                <Trash2 className="h-3.5 w-3.5" /> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="hidden font-heading text-lg font-semibold text-text-primary sm:block">
+                                        {formatMoney(item.total ?? (item.unit_price ?? 0) * item.quantity, currencyCode)}
+                                    </p>
+                                </article>
+                            );
+                        })}
+                    </section>
+
+                    <aside className="rounded border border-border bg-surface p-6 lg:sticky lg:top-28">
+                        <h2 className="font-heading text-2xl text-text-primary">Order summary</h2>
+                        <div className="mt-6 space-y-3 border-b border-border pb-5 text-sm text-text-secondary">
+                            <div className="flex justify-between"><span>Subtotal</span><span className="font-medium text-text-primary">{formatMoney(subtotal, currencyCode)}</span></div>
+                            {discountTotal > 0 && <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{formatMoney(discountTotal, currencyCode)}</span></div>}
+                            <div className="flex justify-between"><span>Shipping</span><span>{hasShippingMethod ? formatMoney(shippingTotal, currencyCode) : "Calculated at checkout"}</span></div>
+                            <div className="flex justify-between"><span>Taxes</span><span>{taxTotal > 0 ? formatMoney(taxTotal, currencyCode) : "Calculated at checkout"}</span></div>
+                        </div>
+                        <div className="flex justify-between py-5 font-semibold text-text-primary"><span>Total</span><span className="font-heading text-xl">{formatMoney(total, currencyCode)}</span></div>
+                        <Link href="/checkout" className="block w-full rounded bg-text-primary px-5 py-3.5 text-center text-xs font-semibold uppercase tracking-wider text-white">
+                            Proceed to checkout
+                        </Link>
+                        <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />Secure Medusa checkout</div>
+                        <Link href="/book" onClick={prepareHomeTrial} className="mt-5 flex w-full items-center justify-center gap-2 rounded border border-border bg-white px-4 py-3 text-xs font-semibold text-text-primary">
+                            <Sparkles className="h-4 w-4 text-gold" />Prefer a home trial?
+                        </Link>
+                    </aside>
                 </div>
-            </section>
-        </SiteShell>
+            )}
+        </main>
     );
 }

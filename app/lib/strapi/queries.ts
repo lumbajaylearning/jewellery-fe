@@ -2,6 +2,7 @@ import { strapiFetch } from "./client";
 import type { HomepageData } from "@/app/types/homepage";
 import type { AnnouncementBarProps } from "@/app/components/layout/AnnouncementBar";
 import type { FooterProps } from "@/app/components/layout/Footer";
+import type { ContentPageResponse } from "@/app/types/content-page";
 
 export interface SiteSettingData {
     data: {
@@ -55,4 +56,10 @@ export function getHomepage() {
 
 export function getSiteSetting() {
     return strapiFetch<SiteSettingData>(`/api/site-setting?populate[announcementBar]=*&populate[footer][populate][columns][populate]=*`).catch(() => fallbackSiteSettings);
+}
+
+export async function getContentPageBySlug(slug: string) {
+    const encodedSlug = encodeURIComponent(slug.toLowerCase());
+    const response = await strapiFetch<ContentPageResponse>(`/api/content-pages?filters[slug][$eq]=${encodedSlug}&populate=*&pagination[limit]=1`);
+    return response.data[0] ?? null;
 }

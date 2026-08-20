@@ -3,10 +3,17 @@ import React from "react";
 
 // --- Types based on your API response ---
 export interface CategoryItem {
-    id: number;
+    id: number | string;
     name: string;
     link: string;
     image?: string; // Optional image prop with fallback
+}
+
+export interface CommerceCategory {
+    id: string;
+    name: string;
+    handle: string;
+    image?: string | null;
 }
 
 export interface CategorySectionProps {
@@ -15,6 +22,7 @@ export interface CategorySectionProps {
     title: string;
     description?: string;
     categories: CategoryItem[];
+    commerceCategories?: CommerceCategory[];
     __component?: string;
 }
 
@@ -31,7 +39,22 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     title,
     description,
     categories,
+    commerceCategories = [],
 }) => {
+    const displayCategories: CategoryItem[] = commerceCategories.length > 0
+        ? commerceCategories.map((category) => {
+            const contentCategory = categories.find((item) =>
+                item.name.trim().toLowerCase() === category.name.trim().toLowerCase()
+            );
+            return {
+                id: category.id,
+                name: category.name,
+                link: `/category/${category.handle}`,
+                image: category.image || contentCategory?.image,
+            };
+        })
+        : categories;
+
     return (
         <section className=" py-12 flex flex-col items-center gap-10 md:gap-12 text-center">
 
@@ -56,7 +79,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
 
             {/* Dynamic Category Grid (2 columns on Mobile, 4 columns on Desktop) */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 w-full">
-                {categories.map((category) => {
+                {displayCategories.map((category) => {
                     const imgSrc =
                         category.image ||
                         DEFAULT_IMAGES[category.name] ||

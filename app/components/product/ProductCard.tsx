@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { ShopProduct } from "@/app/types/product";
+import { isWishlisted, toggleWishlist } from "@/app/lib/wishlist";
 
 type ProductCardProps = {
     product: ShopProduct;
 };
 
 export default function ProductCard({ product }: ProductCardProps) {
+    const [saved, setSaved] = useState(false);
+
+    useEffect(() => setSaved(isWishlisted(product.id)), [product.id]);
     // Sort images by rank or grab the first two images for primary/hover states
     const sortedImages = product.images
         ? [...product.images].sort((a, b) => a.rank - b.rank)
@@ -17,9 +22,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     const primaryImage = product.thumbnail || sortedImages[0]?.url;
     const hoverImage = sortedImages[1]?.url || primaryImage;
 
-    // Fallback dummy values
     const price = product.price.formatted;
-    const details = "18K Gold · Diamond";
+    const details = product.description || `${product.variants.length} ${product.variants.length === 1 ? "variant" : "variants"}`;
 
     return (
         <article className="group relative w-full max-w-[280px]">
@@ -60,15 +64,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Floating Wishlist Button */}
                     <button
                         type="button"
-                        aria-label={`Add ${product.title} to wishlist`}
+                        aria-label={`${saved ? "Remove" : "Add"} ${product.title} ${saved ? "from" : "to"} wishlist`}
                         onClick={(event) => {
                             event.preventDefault();
+                            event.stopPropagation();
+                            const result = toggleWishlist(product);
+                            setSaved(result.added);
                         }}
-                        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-neutral-800 shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-white hover:text-red-500 active:scale-95"
+                        className={`absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow-sm backdrop-blur-md transition-all duration-300 hover:scale-110 hover:bg-white active:scale-95 ${saved ? "text-rose-600" : "text-neutral-800 hover:text-rose-600"}`}
                     >
                         <svg
                             className="h-4 w-4"
-                            fill="none"
+                            fill={saved ? "currentColor" : "none"}
                             stroke="currentColor"
                             strokeWidth="1.5"
                             viewBox="0 0 24 24"
@@ -93,7 +100,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                         </span>
                     </div>
 
-                    <p className="text-xs font-normal tracking-wide text-neutral-500">
+                    <p className="truncate text-xs font-normal tracking-wide text-neutral-500">
                         {details}
                     </p>
                 </div>

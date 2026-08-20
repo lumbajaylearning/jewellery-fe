@@ -1,16 +1,13 @@
 import React from 'react';
-import { Heart, ShoppingBag, Sparkles, Zap } from 'lucide-react';
-import { MetalType, GoldPurity } from '@/app/types/product';
-import { LIVE_GOLD_RATES } from '@/app/data/productData';
+import { Heart, ShoppingBag, Sparkles } from 'lucide-react';
 
 interface MobileStickyBarProps {
   isWishlisted: boolean;
   onToggleWishlist: () => void;
   onAddToCart: () => void;
   onOpenHomeTrial: () => void;
-  selectedMetal: MetalType;
-  selectedPurity?: GoldPurity;
-  selectedSize: number;
+  price?: number;
+  disabled?: boolean;
 }
 
 export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
@@ -18,17 +15,10 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
   onToggleWishlist,
   onAddToCart,
   onOpenHomeTrial,
-  selectedMetal,
-  selectedPurity = '22K',
-  selectedSize
+  price,
+  disabled = false,
 }) => {
-  const rate = LIVE_GOLD_RATES[selectedPurity] || 7850;
-  const netWeight = 1.890;
-  const goldVal = Math.round(netWeight * rate);
-  const makingCharges = Math.round(goldVal * 0.28);
-  const makingDiscount = Math.round(makingCharges * 0.15);
-  const subtotal = goldVal + (makingCharges - makingDiscount);
-  const finalPrice = subtotal + Math.round(subtotal * 0.03);
+  const finalPrice = price ?? 0;
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF8F4]/95 backdrop-blur-md border-t border-[#E5DEC9] p-3 shadow-2xl lg:hidden">
@@ -57,14 +47,15 @@ export const MobileStickyBar: React.FC<MobileStickyBarProps> = ({
         {/* Primary Add to Bag Button */}
         <button
           onClick={onAddToCart}
-          className="flex-1 bg-[#1C1917] active:bg-[#292524] text-[#FAF8F4] py-3 px-4 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-between shadow-xs cursor-pointer"
+          disabled={disabled}
+          className="flex-1 bg-[#1C1917] active:bg-[#292524] disabled:cursor-not-allowed disabled:opacity-50 text-[#FAF8F4] py-3 px-4 rounded text-xs font-semibold uppercase tracking-wider flex items-center justify-between shadow-xs cursor-pointer"
         >
           <span className="flex items-center gap-1.5 font-bold">
             <ShoppingBag className="w-3.5 h-3.5 text-[#C5A880]" />
             <span>Add to Bag</span>
           </span>
           <span className="font-serif font-bold text-xs text-[#FAF8F4]">
-            ₹{finalPrice.toLocaleString('en-IN')}
+            {finalPrice ? `₹${finalPrice.toLocaleString('en-IN')}` : 'Unavailable'}
           </span>
         </button>
       </div>

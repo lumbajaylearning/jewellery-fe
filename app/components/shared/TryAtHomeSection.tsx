@@ -17,10 +17,10 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
           <div className="flex items-center gap-2">
             <span className="bg-[#24201A] text-[#E5C99F] text-[10.5px] font-semibold tracking-widest uppercase px-2.5 py-0.5 rounded border border-[#3E382F] flex items-center gap-1.5 shadow-xs">
               <Sparkles className="w-3 h-3 text-[#C5A880]" />
-              Signature Experience
+              Home Trial
             </span>
             <span className="text-xs text-[#8C8375] font-normal">
-              100% Free • No Purchase Obligation
+              Availability confirmed during booking
             </span>
           </div>
 
@@ -34,19 +34,19 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
           </div>
 
           <p className="text-xs sm:text-sm text-[#B8B0A2] leading-relaxed font-light">
-            Choose up to 3–4 jewellery pieces and try them privately at home with our certified jewellery expert. Experience natural diamonds and gold under your own lighting.
+            Shortlist up to four jewellery pieces and continue to booking. The final slot, service area and appointment details will be confirmed by the home-trial service.
           </p>
 
           {/* 4 Feature Value Pillars */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
               <Clock className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span><strong className="text-[#F5F2EB]">30–40 minute</strong> private session</span>
+              <span><strong className="text-[#F5F2EB]">Choose a slot</strong> during booking</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
               <UserCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span><strong className="text-[#F5F2EB]">Expert-assisted</strong> trial & sizing</span>
+              <span><strong className="text-[#F5F2EB]">Up to four</strong> shortlisted pieces</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
@@ -56,7 +56,7 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
 
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
               <PackageCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span><strong className="text-[#F5F2EB]">Safe & secure</strong> insured transit</span>
+              <span><strong className="text-[#F5F2EB]">Service details</strong> confirmed before booking</span>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
             <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1 text-[#0E0D0B]" />
           </button>
           <span className="text-[11px] text-[#8C8375] mt-2 text-center sm:text-right">
-            Available in 40+ Indian Cities
+            Subject to service-area availability
           </span>
         </div>
       </div>

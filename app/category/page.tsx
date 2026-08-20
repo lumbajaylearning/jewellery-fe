@@ -1,115 +1,27 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import SiteShell from "@/app/components/site-shell";
-import { Badge, Button, ProductCard, SectionHeading } from "@/app/components/ui";
-import { getProducts, type Product } from "@/app/lib/api-client";
+import { ArrowRight, Gem, Sparkles } from "lucide-react";
+import { getProductCategories } from "@/app/lib/medusa/products";
 
-const filters = ["All pieces", "Rings", "Necklaces", "Bracelets"];
+export default async function CategoriesPage() {
+    const categories = await getProductCategories();
 
-export default function CategoryPage() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeFilter, setActiveFilter] = useState("All pieces");
+    return <main className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
+        <header className="rounded border border-border bg-surface px-5 py-10 text-center sm:px-10 sm:py-14">
+            <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-white text-gold"><Sparkles className="h-5 w-5" /></span>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.2em] text-gold">Explore the collection</p>
+            <h1 className="mx-auto mt-3 max-w-3xl font-heading text-4xl text-text-primary sm:text-5xl">Jewellery for every chapter.</h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-text-secondary">Browse our Medusa-powered catalogue by category, then refine your selection by price or style.</p>
+        </header>
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const category = activeFilter === "All pieces" ? undefined : activeFilter;
-
-        getProducts({ category })
-            .then((items) => {
-                if (isMounted) {
-                    setProducts(items);
-                    setError(null);
-                }
-            })
-            .catch((err) => {
-                if (isMounted) {
-                    setError(err instanceof Error ? err.message : "Unable to load products");
-                }
-            })
-            .finally(() => {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [activeFilter]);
-
-    return (
-        <SiteShell activePage="/category" cartCount={2}>
-            <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8 lg:p-10">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                    <div className="max-w-2xl">
-                        <Badge label="Collections" tone="gold" />
-                        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">
-                            Editorial pieces for evening occasions and everyday heirlooms.
-                        </h1>
-                        <p className="mt-4 text-lg leading-8 text-stone-600">
-                            Browse by mood and styling, then add pieces to your consultation cart for a guided visit at home.
-                        </p>
-                    </div>
-                    <Button href="/book" variant="primary">
-                        Book a home visit
-                    </Button>
+        {categories.length > 0 ? <section className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
+            {categories.map((category, index) => <Link key={category.id} href={`/category/${category.handle}`} className="group min-w-0 overflow-hidden rounded border border-border bg-white transition hover:border-gold hover:shadow-sm">
+                <div className="relative aspect-[4/3] overflow-hidden bg-surface sm:aspect-[16/10]">
+                    {category.image ? <img src={category.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,#ffffff_0,#f1ece4_70%)]"><Gem className="h-8 w-8 text-gold sm:h-12 sm:w-12" /><span className="absolute left-3 top-3 text-[10px] font-semibold tracking-[0.2em] text-text-secondary sm:left-5 sm:top-5">{String(index + 1).padStart(2, "0")}</span></div>}
                 </div>
-            </section>
+                <div className="p-4 sm:p-5"><div className="flex min-w-0 items-center justify-between gap-2"><h2 className="truncate font-heading text-xl text-text-primary sm:text-2xl">{category.name}</h2><ArrowRight className="h-4 w-4 flex-none text-gold transition-transform group-hover:translate-x-1" /></div><p className="mt-2 line-clamp-2 text-xs leading-5 text-text-secondary">{category.description || `Discover our curated ${category.name.toLowerCase()} collection.`}</p></div>
+            </Link>)}
+        </section> : <section className="mt-8 rounded border border-dashed border-border bg-white px-5 py-16 text-center"><Gem className="mx-auto h-7 w-7 text-gold" /><h2 className="mt-4 font-heading text-2xl text-text-primary">Collections are being curated.</h2><p className="mt-2 text-sm text-text-secondary">Create product categories in Medusa Admin to display them here.</p><Link href="/shop" className="mt-5 inline-block text-xs font-semibold text-text-primary underline underline-offset-4">Browse all jewellery</Link></section>}
 
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <SectionHeading eyebrow="Refine your edit" title="Find the right pieces quickly" />
-                    <div className="flex flex-wrap gap-3">
-                        {filters.map((filter) => (
-                            <button
-                                key={filter}
-                                onClick={() => setActiveFilter(filter)}
-                                className={filter === activeFilter ? "rounded-full border border-stone-900 bg-stone-900 px-4 py-2 text-sm font-semibold text-white" : "rounded-full border border-stone-300 px-4 py-2 text-sm text-stone-600"}
-                            >
-                                {filter}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {loading ? (
-                    <p className="mt-8 text-sm text-stone-600">Loading products…</p>
-                ) : error ? (
-                    <p className="mt-8 text-sm text-rose-600">{error}</p>
-                ) : products.length > 0 ? (
-                    <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                        {products.map((product) => (
-                            <ProductCard
-                                key={product.id}
-                                name={product.name}
-                                price={`From ₹${product.base_price.toLocaleString("en-IN")}`}
-                                image="https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=900&q=80"
-                                badge={product.category}
-                                href={`/product?id=${product.id}`}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <p className="mt-8 text-sm text-stone-600">No products are available right now.</p>
-                )}
-            </section>
-
-            <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--accent-strong)]">Consultation notes</p>
-                        <h2 className="mt-3 text-2xl font-semibold text-stone-900">Bring up to four pieces into your visit.</h2>
-                    </div>
-                    <Link href="/cart" className="text-sm font-semibold text-stone-700 underline decoration-stone-300 underline-offset-4">
-                        Review your consultation cart
-                    </Link>
-                </div>
-            </section>
-        </SiteShell>
-    );
+        <section className="mt-10 flex flex-col items-center justify-between gap-4 rounded border border-gold bg-surface p-6 text-center sm:flex-row sm:p-8 sm:text-left"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Not sure where to begin?</p><h2 className="mt-2 font-heading text-2xl text-text-primary">Explore the complete jewellery edit.</h2></div><Link href="/shop" className="inline-flex w-full items-center justify-center gap-2 rounded bg-text-primary px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white sm:w-auto">Shop all jewellery <ArrowRight className="h-4 w-4" /></Link></section>
+    </main>;
 }

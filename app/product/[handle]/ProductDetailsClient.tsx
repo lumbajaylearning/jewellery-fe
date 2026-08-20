@@ -1,75 +1,61 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CartDrawer } from "@/app/components/modals/CartDrawer";
 import { CertificateModal } from "@/app/components/modals/CertificateModal";
-import { HomeTrialModal } from "@/app/components/modals/HomeTrialModal";
-import { Interactive360Modal } from "@/app/components/modals/Interactive360Modal";
-import { OldGoldExchangeModal } from "@/app/components/modals/OldGoldExchangeModal";
 import { PriceBreakupModal } from "@/app/components/modals/PriceBreakupModal";
-import { SizeGuideModal } from "@/app/components/modals/SizeGuideModal";
-import { StoreAvailabilityModal } from "@/app/components/modals/StoreAvailabilityModal";
-import { WishlistDrawer } from "@/app/components/modals/WishlistDrawer";
 import { MobileStickyBar } from "@/app/components/product/MobileStickyBar";
 import { PriceBreakdown } from "@/app/components/product/PriceBreakdown";
 import { ProductDetailsAccordion } from "@/app/components/product/ProductDetailsAccordion";
-import { MetalType, ProductGallery } from "@/app/components/product/ProductGallery";
+import { ProductGallery } from "@/app/components/product/ProductGallery";
 import { ProductInfo } from "@/app/components/product/ProductInfo";
-import { CustomerReviews } from "@/app/components/shared/CustomerReviews";
 import { DeliveryChecker } from "@/app/components/shared/DeliveryChecker";
 import { TrustFeatures } from "@/app/components/shared/TrustFeatures";
 import { TryAtHomeSection } from "@/app/components/shared/TryAtHomeSection";
-import { LIVE_GOLD_RATES, PRODUCT_SPECIFICATIONS } from "@/app/data/productData";
-import { CartItem, GoldPurity } from "@/app/types/product";
+import { CartItem } from "@/app/types/product";
+import { addToCart, getOrCreateCart, removeCartLineItem, updateCartLineItem } from "@/app/lib/medusa/cart";
+import { addHomeTrialItem } from "@/app/lib/home-trial";
+import { mapMedusaProduct } from "@/app/lib/medusa/products";
+import { isWishlisted as productIsWishlisted, toggleWishlist } from "@/app/lib/wishlist";
 
 interface ProductDetailsClientProps {
     product: any;
 }
 
 export default function ProductDetailsClient({ product }: ProductDetailsClientProps) {
-    // Product Configurator States
-    const [selectedMetal, setSelectedMetal] = useState<MetalType>('yellow-gold');
-    const [selectedPurity, setSelectedPurity] = useState<GoldPurity>('22K');
-    const [selectedSize, setSelectedSize] = useState<number>(8);
+    const router = useRouter();
     const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [cartLoading, setCartLoading] = useState(false);
 
     // Cart & Drawers State
-    const [cartItems, setCartItems] = useState<CartItem[]>([
-        {
-            id: 'cart-1',
-            title: 'Glorious 22 Karat Yellow Gold Floral Ring',
-            metal: 'yellow-gold',
-            metalName: '22K Yellow Gold (916)',
-            purity: '22K',
-            size: 8,
-            price: 19850,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=300&q=80',
-            sku: '511920FCMAA00'
-        }
-    ]);
+    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+    const mapCartItems = (cart: any): CartItem[] => (cart?.items ?? []).map((item: any) => ({
+        id: item.id,
+        title: item.product_title ?? item.title,
+        metalName: item.variant_title ?? 'Selected variant',
+        size: Number(item.metadata?.size ?? 0),
+        price: item.unit_price ?? 0,
+        quantity: item.quantity,
+        image: item.thumbnail ?? product.thumbnail ?? product.images?.[0]?.url ?? '',
+        sku: item.variant_sku ?? '',
+    }));
+
+    useEffect(() => {
+        let active = true;
+        setIsWishlisted(productIsWishlisted(product.id));
+        getOrCreateCart()
+            .then((cart) => active && setCartItems(mapCartItems(cart)))
+            .catch(() => undefined);
+        return () => { active = false; };
+    }, [product.id]);
 
     // Modal Visibilities
-    const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-    const [homeTrialOpen, setHomeTrialOpen] = useState(false);
-    const [trialInitialPiece, setTrialInitialPiece] = useState<string | undefined>(undefined);
-    const [interactive360Open, setInteractive360Open] = useState(false);
     const [certificateModalOpen, setCertificateModalOpen] = useState(false);
     const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
-    const [wishlistDrawerOpen, setWishlistDrawerOpen] = useState(false);
-    const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
     const [priceBreakupModalOpen, setPriceBreakupModalOpen] = useState(false);
-    const [storeModalOpen, setStoreModalOpen] = useState(false);
-
-    // Dynamic price calculation
-    const currentRate = LIVE_GOLD_RATES[selectedPurity] || 7850;
-    const netWeight = 1.890;
-    const goldVal = Math.round(netWeight * currentRate);
-    const makingCharges = Math.round(goldVal * 0.28);
-    const makingDiscount = Math.round(makingCharges * 0.15);
-    const subtotal = goldVal + (makingCharges - makingDiscount);
-    const currentProductPrice = subtotal + Math.round(subtotal * 0.03);
 
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>(() => {
         const initial: Record<string, string> = {}
@@ -93,64 +79,83 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
     }
 
     const price = selectedVariant?.calculated_price?.calculated_amount
-        || product.variants?.[0]?.calculated_price?.calculated_amount
-    console.log("Selected Options:", selectedOptions);
+        ?? product.variants?.[0]?.calculated_price?.calculated_amount
+        ?? 0;
+    const selectedVariantInStock = selectedVariant && (
+        selectedVariant.manage_inventory === false ||
+        selectedVariant.inventory_quantity == null ||
+        selectedVariant.inventory_quantity > 0
+    );
     const showToast = (msg: string) => {
         setToastMessage(msg);
         setTimeout(() => setToastMessage(null), 3000);
     };
 
-    const handleAddToCart = () => {
-        const metalNameMap: Record<MetalType, string> = {
-            'yellow-gold': `${selectedPurity} Yellow Gold`,
-            'rose-gold': `${selectedPurity} Rose Gold`,
-            'white-gold': `${selectedPurity} White Gold`
-        };
-
-        const newItem: CartItem = {
-            id: `cart-${Date.now()}`,
-            title: PRODUCT_SPECIFICATIONS.productName,
-            metal: selectedMetal,
-            metalName: metalNameMap[selectedMetal],
-            purity: selectedPurity,
-            size: selectedSize,
-            price: currentProductPrice,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=300&q=80',
-            sku: PRODUCT_SPECIFICATIONS.productCode
-        };
-
-        setCartItems(prev => [newItem, ...prev]);
-        showToast(`Added ${PRODUCT_SPECIFICATIONS.productName} (${metalNameMap[selectedMetal]}, Size ${selectedSize}) to Bag`);
-        setCartDrawerOpen(true);
+    const handleAddToCart = async (openDrawer = true) => {
+        if (!selectedVariant?.id || !selectedVariantInStock || cartLoading) return false;
+        setCartLoading(true);
+        try {
+            const cart = await addToCart(selectedVariant.id);
+            setCartItems(mapCartItems(cart));
+            showToast(`Added ${product.title} (${selectedVariant.title}) to Bag`);
+            if (openDrawer) setCartDrawerOpen(true);
+            return true;
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Unable to add this item to the bag');
+            return false;
+        } finally {
+            setCartLoading(false);
+        }
     };
 
-    const handleBuyNow = () => {
-        handleAddToCart();
+    const handleBuyNow = async () => {
+        const added = await handleAddToCart(false);
+        if (added) router.push("/checkout");
     };
 
-    const handleRemoveCartItem = (id: string) => {
-        setCartItems(prev => prev.filter(i => i.id !== id));
+    const handleHomeTrial = () => {
+        if (!selectedVariant?.id) {
+            showToast("Select an available option before booking a home trial");
+            return;
+        }
+        addHomeTrialItem({
+            product_id: product.id,
+            variant_id: selectedVariant.id,
+            title: product.title,
+            variant_title: selectedVariant.title,
+            thumbnail: product.thumbnail ?? product.images?.[0]?.url,
+            price,
+            currency_code: selectedVariant.calculated_price?.currency_code ?? "inr",
+        });
+        router.push("/book");
     };
 
-    const handleUpdateQty = (id: string, delta: number) => {
-        setCartItems(prev => prev.map(item => {
-            if (item.id === id) {
-                const newQty = item.quantity + delta;
-                return newQty > 0 ? { ...item, quantity: newQty } : item;
-            }
-            return item;
-        }));
+    const handleRemoveCartItem = async (id: string) => {
+        try {
+            const cart = await removeCartLineItem(id);
+            setCartItems(mapCartItems(cart));
+        } catch {
+            showToast('Unable to remove this item');
+        }
+    };
+
+    const handleUpdateQty = async (id: string, delta: number) => {
+        const item = cartItems.find((lineItem) => lineItem.id === id);
+        if (!item) return;
+        const quantity = item.quantity + delta;
+        if (quantity < 1) return handleRemoveCartItem(id);
+        try {
+            const cart = await updateCartLineItem(id, quantity);
+            setCartItems(mapCartItems(cart));
+        } catch {
+            showToast('Unable to update the quantity');
+        }
     };
 
     const handleToggleWishlist = () => {
-        setIsWishlisted(prev => !prev);
-        showToast(!isWishlisted ? 'Added Floral Ring to Wishlist' : 'Removed from Wishlist');
-    };
-
-    const scrollToReviews = () => {
-        const el = document.getElementById('customer-reviews');
-        el?.scrollIntoView({ behavior: 'smooth' });
+        const result = toggleWishlist(mapMedusaProduct(product));
+        setIsWishlisted(result.added);
+        showToast(result.added ? `Added ${product.title} to Wishlist` : `Removed ${product.title} from Wishlist`);
     };
 
     return (
@@ -162,109 +167,84 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                     {/* Left Column: Product Gallery */}
                     <div className="lg:col-span-7 lg:sticky lg:top-6 self-start w-full">
                         <ProductGallery
-                            selectedMetal={selectedMetal}
                             isWishlisted={isWishlisted}
-                            onToggleWishlist={() => setIsWishlisted(!isWishlisted)}
-                            onOpen360Modal={() => { }}
-                            onOpenCertificateModal={() => { }}
-                            onOpenVirtualTryOn={() => { }}
+                            onToggleWishlist={handleToggleWishlist}
                             images={product?.images || []}
+                            productTitle={product.title}
                         />
                     </div>
                     {/* Right Column: Product Details */}
                     <div className="lg:col-span-5 w-full space-y-6">
                         <ProductInfo
-                            selectedMetal={selectedMetal}
-                            onSelectMetal={setSelectedMetal}
-                            selectedPurity={selectedPurity}
-                            onSelectPurity={setSelectedPurity}
-                            selectedSize={selectedSize}
-                            onSelectSize={setSelectedSize}
-                            onOpenSizeGuide={() => setSizeGuideOpen(true)}
-                            onOpenHomeTrial={() => setHomeTrialOpen(true)}
                             onOpenPriceBreakdown={() => setPriceBreakupModalOpen(true)}
                             onOpenCertificateModal={() => setCertificateModalOpen(true)}
-                            onOpenExchangeModal={() => setExchangeModalOpen(true)}
-                            onOpenStoreModal={() => setStoreModalOpen(true)}
-                            onAddToCart={handleAddToCart}
+                            onAddToCart={() => void handleAddToCart()}
                             onBuyNow={handleBuyNow}
                             isWishlisted={isWishlisted}
                             onToggleWishlist={handleToggleWishlist}
-                            onScrollToReviews={scrollToReviews}
                             product={product}
+                            selectedVariant={selectedVariant}
+                            selectedOptions={selectedOptions}
+                            onOptionChange={handleOptionChange}
+                            cartLoading={cartLoading}
                         />
 
                         {/* Delivery & Pincode Checker */}
                         <div className="pt-2">
-                            <DeliveryChecker onOpenStoreModal={() => setStoreModalOpen(true)} />
+                            <DeliveryChecker />
                         </div>
 
                         {/* Try at Home Feature in Right Rail for Desktop */}
                         <div className="hidden lg:block pt-2">
-                            <TryAtHomeSection onOpenHomeTrial={() => setHomeTrialOpen(true)} />
+                            <TryAtHomeSection onOpenHomeTrial={handleHomeTrial} />
                         </div>
                     </div>
                 </div>
 
                 {/* Try at Home Feature in Main Stream for Mobile */}
                 <div className="lg:hidden mt-8">
-                    <TryAtHomeSection onOpenHomeTrial={() => setHomeTrialOpen(true)} />
+                    <TryAtHomeSection onOpenHomeTrial={handleHomeTrial} />
                 </div>
 
                 {/* Trust Indicators Bar */}
                 <div className="mt-8">
-                    <TrustFeatures onOpenCertificateModal={() => setCertificateModalOpen(true)} />
+                    <TrustFeatures product={product} onOpenCertificateModal={() => setCertificateModalOpen(true)} />
                 </div>
 
                 {/* Detailed Product Specifications Accordion & Transparent Pricing */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-8 items-start">
                     <div className="lg:col-span-7">
                         <ProductDetailsAccordion
-                            onOpenCertificateModal={() => setCertificateModalOpen(true)}
-                            onOpenExchangeModal={() => setExchangeModalOpen(true)}
+                            product={product}
+                            selectedVariant={selectedVariant}
                         />
                     </div>
 
                     <div id="price-breakdown-section" className="lg:col-span-5">
-                        <PriceBreakdown selectedPurity={selectedPurity} />
+                        <PriceBreakdown product={product} selectedVariant={selectedVariant} />
                     </div>
                 </div>
 
             </main>
-            {/* Customer Stories Section */}
-            <CustomerReviews />
             <MobileStickyBar
                 isWishlisted={isWishlisted}
                 onToggleWishlist={handleToggleWishlist}
-                onAddToCart={handleAddToCart}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
-                selectedMetal={selectedMetal}
-                selectedPurity={selectedPurity}
-                selectedSize={selectedSize}
+                onAddToCart={() => void handleAddToCart()}
+                onOpenHomeTrial={handleHomeTrial}
+                price={price}
+                disabled={cartLoading || !selectedVariantInStock}
             />
+            {toastMessage && (
+                <div role="status" className="fixed bottom-24 left-1/2 z-[70] -translate-x-1/2 rounded border border-[#E5DEC9] bg-[#1C1917] px-4 py-3 text-xs font-medium text-[#FAF8F4] shadow-xl lg:bottom-8">
+                    {toastMessage}
+                </div>
+            )}
             {/* Modals & Drawers */}
-            <SizeGuideModal
-                isOpen={sizeGuideOpen}
-                onClose={() => setSizeGuideOpen(false)}
-                selectedSize={selectedSize}
-                onSelectSize={setSelectedSize}
-            />
-
-            <HomeTrialModal
-                isOpen={homeTrialOpen}
-                onClose={() => setHomeTrialOpen(false)}
-                initialPiece={trialInitialPiece}
-            />
-
-            <Interactive360Modal
-                isOpen={interactive360Open}
-                onClose={() => setInteractive360Open(false)}
-                metal={selectedMetal}
-            />
-
             <CertificateModal
                 isOpen={certificateModalOpen}
                 onClose={() => setCertificateModalOpen(false)}
+                product={product}
+                selectedVariant={selectedVariant}
             />
 
             <CartDrawer
@@ -273,39 +253,16 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
                 items={cartItems}
                 onRemoveItem={handleRemoveCartItem}
                 onUpdateQty={handleUpdateQty}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
-            />
-
-            <WishlistDrawer
-                isOpen={wishlistDrawerOpen}
-                onClose={() => setWishlistDrawerOpen(false)}
-                isMainProductWishlisted={isWishlisted}
-                onToggleMainWishlist={handleToggleWishlist}
-                onAddToCart={handleAddToCart}
-                onOpenHomeTrial={() => setHomeTrialOpen(true)}
-                metal={selectedMetal}
-            />
-
-            <OldGoldExchangeModal
-                isOpen={exchangeModalOpen}
-                onClose={() => setExchangeModalOpen(false)}
-                targetProductPrice={currentProductPrice}
+                onOpenHomeTrial={handleHomeTrial}
             />
 
             <PriceBreakupModal
                 isOpen={priceBreakupModalOpen}
                 onClose={() => setPriceBreakupModalOpen(false)}
-                selectedPurity={selectedPurity}
+                product={product}
+                selectedVariant={selectedVariant}
             />
 
-            <StoreAvailabilityModal
-                isOpen={storeModalOpen}
-                onClose={() => setStoreModalOpen(false)}
-                onBookAppointment={(storeName) => {
-                    setTrialInitialPiece(`${PRODUCT_SPECIFICATIONS.productName} at ${storeName}`);
-                    setHomeTrialOpen(true);
-                }}
-            />
         </div>
     );
 }

@@ -1,15 +1,28 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import SiteShell from "@/app/components/site-shell";
 import { Badge, Button, StepCard } from "@/app/components/ui";
+import { HOME_TRIAL_CONFIRMATION_KEY } from "@/app/lib/home-trial";
 
 function ConfirmationContent() {
     const searchParams = useSearchParams();
     const bookingId = searchParams.get("bookingId") ?? "Pending";
-    const slot = searchParams.get("slot") ?? "To be confirmed";
-    const itemCount = searchParams.get("items") ?? "0";
+    const [details, setDetails] = useState<any>(null);
+
+    useEffect(() => {
+        const stored = window.sessionStorage.getItem(HOME_TRIAL_CONFIRMATION_KEY);
+        if (!stored) return;
+        try {
+            setDetails(JSON.parse(stored));
+        } catch {
+            window.sessionStorage.removeItem(HOME_TRIAL_CONFIRMATION_KEY);
+        }
+    }, []);
+
+    const itemCount = details?.items?.length ?? 0;
+    const address = details?.address;
 
     return (
         <SiteShell activePage="/cart" cartCount={0}>
@@ -26,9 +39,9 @@ function ConfirmationContent() {
                     <h2 className="text-2xl font-semibold text-stone-900">Booking summary</h2>
                     <div className="mt-6 space-y-3 text-sm leading-7 text-stone-600">
                         <p><span className="font-semibold text-stone-900">Booking ID:</span> #{bookingId}</p>
-                        <p><span className="font-semibold text-stone-900">Date:</span> Wednesday, 14 August</p>
-                        <p><span className="font-semibold text-stone-900">Time:</span> {slot}</p>
-                        <p><span className="font-semibold text-stone-900">Address:</span> Home • 12, Orchard Lane</p>
+                        <p><span className="font-semibold text-stone-900">Date:</span> {details?.dateLabel ?? details?.booking?.preferred_date ?? "To be confirmed"}</p>
+                        <p><span className="font-semibold text-stone-900">Time:</span> {details?.slotLabel ?? details?.booking?.preferred_time ?? "To be confirmed"}</p>
+                        <p><span className="font-semibold text-stone-900">Address:</span> {address ? `${address.address_1}, ${address.city}, ${address.province} ${address.postal_code}` : details?.booking?.address ?? "Saved with booking"}</p>
                         <p><span className="font-semibold text-stone-900">Items:</span> {itemCount} piece{Number(itemCount) === 1 ? "" : "s"} shortlisted</p>
                     </div>
                     <div className="mt-6 flex flex-wrap gap-3">

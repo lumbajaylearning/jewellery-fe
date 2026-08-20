@@ -34,10 +34,10 @@ export default async function RootLayout({
       lang="en"
       className={`${cormorant.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col items-center justify-between ">
+      <body className="flex min-h-screen flex-col">
         <AnnouncementBar {...siteSettings.data.announcementBar} />
         <Navbar />
-        {children}
+        <div className="w-full flex-1">{children}</div>
         <Footer {...siteSettings.data.footer} />
       </body>
     </html>
