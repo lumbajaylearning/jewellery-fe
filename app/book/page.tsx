@@ -4,195 +4,117 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarDays, Check, ChevronLeft, Clock, MapPin, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
-import { createBooking } from "@/app/lib/api-client";
 import { createCustomerAddress, listCustomerAddresses, retrieveCustomer, updateCustomerAddress } from "@/app/lib/medusa/customer";
-import { HOME_TRIAL_CONFIRMATION_KEY, HomeTrialItem, readHomeTrialItems, removeHomeTrialItem, writeHomeTrialItems } from "@/app/lib/home-trial";
+import { createHomeTrial, getHomeTrialConfig, getHomeTrialSlots, getInrRegionId, HomeTrialConfig, HomeTrialSlot } from "@/app/lib/medusa/home-trial";
+import { HomeTrialItem, readHomeTrialItems, removeHomeTrialItem, writeHomeTrialItems } from "@/app/lib/home-trial";
 
-const emptyAddress = { first_name: "", last_name: "", address_1: "", address_2: "", city: "", province: "", postal_code: "", country_code: "in", phone: "" };
-const slots = [
-    { value: "11:00-13:00", label: "11:00 AM – 1:00 PM" },
-    { value: "14:00-16:00", label: "2:00 PM – 4:00 PM" },
-    { value: "17:00-19:00", label: "5:00 PM – 7:00 PM" },
-];
-
-function formatMoney(amount = 0, currency = "inr") {
-    return new Intl.NumberFormat("en-IN", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amount);
-}
-
-function mapAddress(value: any) {
-    return Object.fromEntries(Object.keys(emptyAddress).map((key) => [key, value[key] ?? (key === "country_code" ? "in" : "")])) as typeof emptyAddress;
-}
-
-function addressText(value: typeof emptyAddress) {
-    return [`${value.first_name} ${value.last_name}`.trim(), value.address_1, value.address_2, `${value.city}, ${value.province} ${value.postal_code}`, value.phone].filter(Boolean).join(", ");
-}
+const emptyAddress = { first_name: "", last_name: "", address_1: "", address_2: "", city: "Lucknow", province: "Uttar Pradesh", postal_code: "", country_code: "in", phone: "" };
+const money = (amount = 0, currency = "inr") => new Intl.NumberFormat("en-IN", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amount);
+const mapAddress = (value: any) => Object.fromEntries(Object.keys(emptyAddress).map((key) => [key, value[key] ?? (key === "country_code" ? "in" : "")])) as typeof emptyAddress;
+const slotDate = (value: string) => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(`${value}T12:00:00+05:30`));
 
 export default function BookPage() {
     const router = useRouter();
     const [items, setItems] = useState<HomeTrialItem[]>([]);
-    const [dates, setDates] = useState<Array<{ value: string; label: string }>>([]);
-    const [date, setDate] = useState("");
-    const [slot, setSlot] = useState(slots[0].value);
+    const [config, setConfig] = useState<HomeTrialConfig | null>(null);
+    const [customer, setCustomer] = useState<any>(null);
     const [addresses, setAddresses] = useState<any[]>([]);
     const [addressId, setAddressId] = useState<string | null>(null);
     const [address, setAddress] = useState(emptyAddress);
     const [addressOpen, setAddressOpen] = useState(true);
-    const [authenticated, setAuthenticated] = useState(false);
-    const [customer, setCustomer] = useState<any>(null);
+    const [slots, setSlots] = useState<HomeTrialSlot[]>([]);
+    const [slotId, setSlotId] = useState("");
+    const [serviceChecked, setServiceChecked] = useState(false);
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(true);
+    const [checking, setChecking] = useState(false);
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         setItems(readHomeTrialItems());
-        const nextDates = Array.from({ length: 5 }, (_, index) => {
-            const next = new Date();
-            next.setDate(next.getDate() + index + 1);
-            return { value: next.toISOString().slice(0, 10), label: new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short" }).format(next) };
-        });
-        setDates(nextDates);
-        setDate(nextDates[0].value);
-        retrieveCustomer().then(async (profile) => {
-            setCustomer(profile);
-            setAuthenticated(true);
-            const saved = await listCustomerAddresses();
-            setAddresses(saved);
+        Promise.all([retrieveCustomer(), getHomeTrialConfig(), listCustomerAddresses()]).then(([profile, settings, saved]) => {
+            setCustomer(profile); setConfig(settings); setAddresses(saved);
             if (saved.length) {
                 const preferred = saved.find((entry: any) => entry.is_default_shipping) ?? saved[0];
-                setAddressId(preferred.id);
-                setAddress(mapAddress(preferred));
-                setAddressOpen(false);
-            } else {
-                setAddress((current) => ({ ...current, first_name: profile.first_name ?? "", last_name: profile.last_name ?? "", phone: profile.phone ?? "" }));
-            }
+                setAddressId(preferred.id); setAddress(mapAddress(preferred)); setAddressOpen(false);
+            } else setAddress((current) => ({ ...current, first_name: profile.first_name ?? "", last_name: profile.last_name ?? "", phone: profile.phone ?? "" }));
         }).catch(() => undefined).finally(() => setLoading(false));
     }, []);
 
-    const dateLabel = dates.find((entry) => entry.value === date)?.label ?? date;
-    const slotLabel = slots.find((entry) => entry.value === slot)?.label ?? slot;
     const totalValue = useMemo(() => items.reduce((sum, item) => sum + (item.price ?? 0), 0), [items]);
+    const selectedSlot = slots.find((entry) => entry.id === slotId);
+
+    const checkAvailability = async (postalCode = address.postal_code) => {
+        if (!/^\d{6}$/.test(postalCode)) return setError("Enter a valid 6-digit PIN code.");
+        setChecking(true); setError(null); setServiceChecked(false); setSlotId("");
+        try {
+            const response = await getHomeTrialSlots(postalCode);
+            setSlots(response.slots); setServiceChecked(true);
+            if (!response.serviceable) setError("Home Trial is not available at this PIN code yet.");
+            else if (!response.slots.length) setError("No appointment slots are currently available for this PIN code.");
+            else setSlotId(response.slots[0].id);
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to check availability."); }
+        finally { setChecking(false); }
+    };
 
     const selectAddress = (saved: any) => {
-        setAddressId(saved.id);
-        setAddress(mapAddress(saved));
-        setAddressOpen(false);
-        setError(null);
+        const next = mapAddress(saved); setAddressId(saved.id); setAddress(next); setAddressOpen(false); setSlots([]); setSlotId(""); setServiceChecked(false); setError(null);
     };
-
-    const differentAddress = () => {
-        setAddressId(null);
-        setAddress({ ...emptyAddress, first_name: customer?.first_name ?? "", last_name: customer?.last_name ?? "", phone: customer?.phone ?? "" });
-        setAddressOpen(true);
-        setError(null);
-    };
-
     const validateAddress = () => {
-        const required: Array<keyof typeof emptyAddress> = ["first_name", "last_name", "address_1", "city", "province", "postal_code", "phone"];
-        if (required.some((field) => !address[field].trim())) {
-            setError("Complete all required address fields.");
-            return false;
-        }
-        if (!/^[0-9]{6}$/.test(address.postal_code)) {
-            setError("Enter a valid 6-digit PIN code.");
-            return false;
-        }
+        if (["first_name", "last_name", "address_1", "city", "province", "postal_code"].some((key) => !address[key as keyof typeof address].trim())) { setError("Complete all required address fields."); return false; }
+        if (!/^\d{6}$/.test(address.postal_code)) { setError("Enter a valid 6-digit PIN code."); return false; }
         return true;
     };
-
-    const useAddress = () => {
-        if (!validateAddress()) return;
-        setAddressOpen(false);
-        setError(null);
-    };
-
+    const useAddress = async () => { if (validateAddress()) { setAddressOpen(false); await checkAvailability(); } };
     const saveAddress = async () => {
-        if (!validateAddress() || saving) return;
-        setSaving(true);
-        setError(null);
+        if (!validateAddress() || saving) return; setSaving(true); setError(null);
         try {
-            let saved: any[];
-            if (addressId) {
-                const current = addresses.find((entry) => entry.id === addressId);
-                saved = await updateCustomerAddress(addressId, { ...address, address_name: current?.address_name || "Home trial address", is_default_shipping: current?.is_default_shipping ?? false, is_default_billing: current?.is_default_billing ?? false });
-            } else {
-                saved = await createCustomerAddress({ ...address, address_name: "Home trial address" });
-            }
-            setAddresses(saved);
-            const match = addressId ? saved.find((entry) => entry.id === addressId) : saved.find((entry) => entry.address_1 === address.address_1 && entry.postal_code === address.postal_code);
-            if (match) setAddressId(match.id);
-            setAddressOpen(false);
-        } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to save this address.");
-        } finally {
-            setSaving(false);
-        }
+            const payload = { ...address, phone: customer.phone, address_name: "Home trial address" };
+            const saved = addressId ? await updateCustomerAddress(addressId, payload) : await createCustomerAddress(payload);
+            setAddresses(saved); setAddressOpen(false); await checkAvailability();
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to save this address."); }
+        finally { setSaving(false); }
     };
+    const removeItem = (id: string) => { removeHomeTrialItem(id); setItems(readHomeTrialItems()); };
 
-    const removeItem = (variantId: string) => {
-        removeHomeTrialItem(variantId);
-        setItems(readHomeTrialItems());
-    };
-
-    const bookTrial = async () => {
-        if (!items.length) return setError("Select at least one jewellery piece for your home trial.");
-        if (addressOpen || !validateAddress()) {
-            setAddressOpen(true);
-            return;
-        }
-        setSubmitting(true);
-        setError(null);
+    const book = async () => {
+        if (!config?.enabled) return setError("Home Trial booking is currently unavailable.");
+        if (!items.length) return setError("Select at least one jewellery piece.");
+        if (items.length > config.max_item_count) return setError(`Select no more than ${config.max_item_count} pieces.`);
+        if (totalValue > config.max_total_value) return setError(`Trial-kit value cannot exceed ${money(config.max_total_value, config.currency_code)}.`);
+        if (addressOpen || !validateAddress()) return setAddressOpen(true);
+        if (!slotId) return setError("Check your PIN code and select an available appointment slot.");
+        setSubmitting(true); setError(null);
         try {
-            const booking = await createBooking({
-                customer_name: `${address.first_name} ${address.last_name}`.trim(),
-                address: addressText(address), preferred_date: date, preferred_time: slot, slot: `${date} ${slot}`, notes,
-                booking_items: items.map((item) => ({ product_id: item.product_id, variant_id: item.variant_id, quantity: 1 })),
+            const booking = await createHomeTrial({
+                region_id: await getInrRegionId(), slot_id: slotId,
+                items: items.map((item) => ({ variant_id: item.variant_id, quantity: 1 })),
+                address: { first_name: address.first_name, last_name: address.last_name, address_1: address.address_1, address_2: address.address_2, city: address.city, province: address.province, postal_code: address.postal_code, country_code: "in" },
+                notes: notes.trim() || undefined,
             });
-            window.sessionStorage.setItem(HOME_TRIAL_CONFIRMATION_KEY, JSON.stringify({ booking, items, dateLabel, slotLabel, address }));
-            writeHomeTrialItems([]);
-            router.push(`/confirmation?bookingId=${booking.id}`);
-        } catch (caught) {
-            setError(caught instanceof Error ? caught.message : "Unable to book your home trial.");
-        } finally {
-            setSubmitting(false);
-        }
+            writeHomeTrialItems([]); router.push(`/confirmation?bookingId=${encodeURIComponent(booking.id)}`);
+        } catch (error) { setError(error instanceof Error ? error.message : "Unable to book your Home Trial."); }
+        finally { setSubmitting(false); }
     };
 
-    if (loading) return <main className="flex min-h-[55vh] items-center justify-center"><p className="text-sm text-text-secondary">Preparing your home trial…</p></main>;
-
-    const fields: Array<[keyof typeof emptyAddress, string]> = [["first_name", "First name"], ["last_name", "Last name"], ["city", "City"], ["province", "State"], ["postal_code", "PIN code"], ["phone", "Phone"]];
+    if (loading) return <main className="flex min-h-[55vh] items-center justify-center"><p className="text-sm text-text-secondary">Preparing your Home Trial…</p></main>;
+    if (!customer) return <main className="mx-auto flex min-h-[55vh] max-w-xl items-center px-5"><section className="w-full rounded border border-border bg-surface p-8 text-center"><ShieldCheck className="mx-auto h-7 w-7 text-gold" /><h1 className="mt-4 font-heading text-3xl">Mobile login required</h1><p className="mt-3 text-sm leading-6 text-text-secondary">Register or sign in with your verified mobile number before booking a Home Trial.</p><Link href="/account?returnTo=/book" className="mt-6 inline-block rounded bg-text-primary px-6 py-3 text-xs font-semibold uppercase tracking-wider text-white">Continue to account</Link></section></main>;
 
     return <main className="mx-auto w-full max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
-        <Link href="/shop" className="mb-7 inline-flex items-center gap-1 text-xs font-semibold text-text-secondary hover:text-text-primary"><ChevronLeft className="h-4 w-4" /> Continue selecting jewellery</Link>
-        <div className="mb-10"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Complimentary home trial</p><h1 className="mt-3 font-heading text-4xl text-text-primary sm:text-5xl">Try your favourites at home.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-text-secondary">Choose up to four pieces. A verified jewellery specialist brings them in a secured kit for a private 30–40 minute consultation.</p></div>
+        <Link href="/shop" className="mb-7 inline-flex items-center gap-1 text-xs font-semibold text-text-secondary"><ChevronLeft className="h-4 w-4" /> Continue selecting jewellery</Link>
+        <div className="mb-10"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Home Trial</p><h1 className="mt-3 font-heading text-4xl sm:text-5xl">Try your favourites at home.</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-text-secondary">Choose up to {config?.max_item_count ?? 4} pieces within {money(config?.max_total_value, config?.currency_code)}. Availability and limits are verified by Medusa before booking.</p></div>
         {error && <div role="alert" className="mb-6 rounded border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start"><div className="space-y-6">
-            <section className="rounded border border-border bg-white p-5 sm:p-7"><StepTitle number="1" title="Trial selection" />
-                {items.length ? <div className="mt-6 divide-y divide-border">{items.map((item) => <article key={item.variant_id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"><div className="h-20 w-16 flex-shrink-0 overflow-hidden rounded bg-surface">{item.thumbnail && <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover" />}</div><div className="min-w-0 flex-1"><h3 className="font-heading text-lg text-text-primary">{item.title}</h3><p className="mt-1 text-xs text-text-secondary">{item.variant_title || "Selected variant"}</p>{item.price !== undefined && <p className="mt-2 text-xs font-semibold">{formatMoney(item.price, item.currency_code)}</p>}</div><button type="button" onClick={() => removeItem(item.variant_id)} className="p-2 text-text-secondary hover:text-rose-700"><Trash2 className="h-4 w-4" /></button></article>)}</div> : <div className="mt-6 rounded border border-dashed border-border bg-surface p-6 text-center"><Sparkles className="mx-auto h-5 w-5 text-gold" /><p className="mt-3 text-sm text-text-secondary">No jewellery selected yet.</p><Link href="/shop" className="mt-4 inline-block text-xs font-semibold underline underline-offset-4">Browse jewellery</Link></div>}
-                <p className="mt-5 text-[11px] text-text-secondary">{items.length}/4 pieces selected · Approximate value {formatMoney(totalValue, items[0]?.currency_code)}</p>
-            </section>
-            <section className="rounded border border-border bg-white p-5 sm:p-7"><StepTitle number="2" title="Visit date and time" />
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">{dates.map((entry) => <button key={entry.value} type="button" onClick={() => setDate(entry.value)} className={`rounded border px-3 py-4 text-xs font-semibold ${date === entry.value ? "border-gold bg-surface ring-1 ring-gold" : "border-border text-text-secondary hover:border-gold"}`}><CalendarDays className="mx-auto mb-2 h-4 w-4 text-gold" />{entry.label}</button>)}</div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">{slots.map((entry) => <button key={entry.value} type="button" onClick={() => setSlot(entry.value)} className={`flex items-center justify-between rounded border p-4 text-left text-xs font-semibold ${slot === entry.value ? "border-gold bg-surface ring-1 ring-gold" : "border-border text-text-secondary hover:border-gold"}`}><span className="flex items-center gap-2"><Clock className="h-4 w-4 text-gold" />{entry.label}</span>{slot === entry.value && <Check className="h-4 w-4 text-gold" />}</button>)}</div>
-            </section>
-            <section className="rounded border border-border bg-white p-5 sm:p-7"><StepTitle number="3" title="Trial address" />
-                {!!addresses.length && <div className="mt-6 flex gap-3 overflow-x-auto pb-2">{addresses.map((saved) => <button key={saved.id} type="button" onClick={() => selectAddress(saved)} className={`min-w-52 rounded border p-3 text-left text-xs ${addressId === saved.id && !addressOpen ? "border-gold bg-surface ring-1 ring-gold" : "border-border"}`}><span className="flex justify-between font-semibold">{saved.address_name || "Saved address"}{addressId === saved.id && !addressOpen && <Check className="h-3.5 w-3.5 text-gold" />}</span><span className="mt-1 block truncate text-text-secondary">{saved.address_1}, {saved.city}</span></button>)}</div>}
-                {!addressOpen && <div className="mt-5 rounded border border-gold bg-surface p-4"><div className="flex justify-between gap-4"><p className="text-sm leading-6 text-text-secondary"><strong className="text-text-primary">{address.first_name} {address.last_name}</strong><br />{address.address_1}{address.address_2 ? `, ${address.address_2}` : ""}<br />{address.city}, {address.province} {address.postal_code}<br />{address.phone}</p><MapPin className="h-5 w-5 text-gold" /></div><div className="mt-4 flex gap-4 border-t border-border pt-3"><button type="button" onClick={() => setAddressOpen(true)} className="text-xs font-semibold">Edit address</button><button type="button" onClick={differentAddress} className="text-xs font-semibold text-gold">Use a different address</button></div></div>}
-                {addressOpen && <div className="mt-6 grid gap-4 sm:grid-cols-2">{fields.map(([field, label]) => <Field key={field} label={label} value={address[field]} numeric={field === "postal_code"} onChange={(value) => setAddress((current) => ({ ...current, [field]: value }))} />)}<div className="sm:col-span-2"><Field label="Address" value={address.address_1} onChange={(value) => setAddress((current) => ({ ...current, address_1: value }))} /></div><div className="sm:col-span-2"><Field label="Apartment, suite or landmark (optional)" value={address.address_2} onChange={(value) => setAddress((current) => ({ ...current, address_2: value }))} /></div><div className="sm:col-span-2 flex flex-wrap justify-end gap-3 border-t border-border pt-4">{!!addresses.length && <button type="button" onClick={() => selectAddress(addresses.find((entry) => entry.id === addressId) ?? addresses[0])} className="px-3 py-2 text-xs font-semibold text-text-secondary">Cancel</button>}<button type="button" onClick={useAddress} className="rounded border border-text-primary px-4 py-2.5 text-xs font-semibold">Use for this trial</button>{authenticated && <button type="button" disabled={saving} onClick={saveAddress} className="rounded bg-text-primary px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : addressId ? "Update saved address" : "Save and use address"}</button>}</div></div>}
-            </section>
-        </div><aside className="rounded border border-border bg-surface p-6 lg:sticky lg:top-28"><h2 className="font-heading text-2xl">Trial summary</h2><div className="mt-5 space-y-4 border-y border-border py-5 text-sm text-text-secondary"><Summary icon={<CalendarDays />} title={dateLabel || "Select a date"} detail={slotLabel} /><Summary icon={<MapPin />} title={address.address_1 ? `${address.address_1}, ${address.city}` : "Add your trial address"} /><Summary icon={<Sparkles />} title={`${items.length} ${items.length === 1 ? "piece" : "pieces"} in your secured trial kit`} /></div><label className="mt-5 block text-xs font-semibold">Notes for the jewellery specialist <span className="font-normal text-text-secondary">(optional)</span><textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-2 w-full resize-none rounded border border-border bg-white px-4 py-3 text-sm font-normal outline-none focus:border-gold" placeholder="Sizing, access instructions or preferences" /></label><button type="button" disabled={submitting || !items.length} onClick={bookTrial} className="mt-5 w-full rounded bg-text-primary px-5 py-4 text-xs font-semibold uppercase tracking-wider text-white disabled:opacity-50">{submitting ? "Booking trial…" : "Confirm free home trial"}</button><div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />No payment required</div></aside></div>
+            <section className="rounded border border-border bg-white p-5 sm:p-7"><Step number="1" title="Trial selection" />{items.length ? <div className="mt-6 divide-y divide-border">{items.map((item) => <article key={item.variant_id} className="flex items-center gap-4 py-4"><div className="h-20 w-16 overflow-hidden rounded bg-surface">{item.thumbnail && <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover" />}</div><div className="min-w-0 flex-1"><h3 className="font-heading text-lg">{item.title}</h3><p className="text-xs text-text-secondary">{item.variant_title}</p><p className="mt-2 text-xs font-semibold">{money(item.price, item.currency_code)}</p></div><button onClick={() => removeItem(item.variant_id)} className="p-2 text-text-secondary"><Trash2 className="h-4 w-4" /></button></article>)}</div> : <div className="mt-6 rounded border border-dashed border-border bg-surface p-6 text-center"><Sparkles className="mx-auto h-5 w-5 text-gold" /><p className="mt-3 text-sm text-text-secondary">No jewellery selected yet.</p><Link href="/shop" className="mt-4 inline-block text-xs font-semibold underline">Browse jewellery</Link></div>}<p className="mt-5 text-[11px] text-text-secondary">{items.length}/{config?.max_item_count ?? 4} pieces · Approximate value {money(totalValue, items[0]?.currency_code)}</p></section>
+            <section className="rounded border border-border bg-white p-5 sm:p-7"><Step number="2" title="Trial address" />{!!addresses.length && <div className="mt-6 flex gap-3 overflow-x-auto">{addresses.map((saved) => <button key={saved.id} onClick={() => selectAddress(saved)} className={`min-w-52 rounded border p-3 text-left text-xs ${addressId === saved.id && !addressOpen ? "border-gold bg-surface" : "border-border"}`}><strong>{saved.address_name || "Saved address"}</strong><span className="mt-1 block truncate text-text-secondary">{saved.address_1}, {saved.city}</span></button>)}</div>}{!addressOpen && <div className="mt-5 rounded border border-gold bg-surface p-4"><p className="text-sm leading-6 text-text-secondary"><strong className="text-text-primary">{address.first_name} {address.last_name}</strong><br />{address.address_1}{address.address_2 && `, ${address.address_2}`}<br />{address.city}, {address.province} {address.postal_code}</p><button onClick={() => setAddressOpen(true)} className="mt-3 text-xs font-semibold underline">Edit address</button></div>}{addressOpen && <div className="mt-6 grid gap-4 sm:grid-cols-2"><Field label="First name" value={address.first_name} set={(value) => setAddress({ ...address, first_name: value })} /><Field label="Last name" value={address.last_name} set={(value) => setAddress({ ...address, last_name: value })} /><Field label="City" value={address.city} set={(value) => setAddress({ ...address, city: value })} /><Field label="State" value={address.province} set={(value) => setAddress({ ...address, province: value })} /><Field label="PIN code" value={address.postal_code} numeric set={(value) => { setAddress({ ...address, postal_code: value }); setServiceChecked(false); setSlots([]); setSlotId(""); }} /><div /><div className="sm:col-span-2"><Field label="Address" value={address.address_1} set={(value) => setAddress({ ...address, address_1: value })} /></div><div className="sm:col-span-2"><Field label="Landmark (optional)" required={false} value={address.address_2} set={(value) => setAddress({ ...address, address_2: value })} /></div><div className="sm:col-span-2 flex justify-end gap-3"><button type="button" onClick={useAddress} className="rounded border border-text-primary px-4 py-2.5 text-xs font-semibold">Use this address</button><button type="button" disabled={saving} onClick={saveAddress} className="rounded bg-text-primary px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">{saving ? "Saving…" : "Save and use"}</button></div></div>}</section>
+            <section className="rounded border border-border bg-white p-5 sm:p-7"><Step number="3" title="Available date and time" /><div className="mt-6"><button onClick={() => checkAvailability()} disabled={checking || addressOpen} className="rounded border border-text-primary px-4 py-2.5 text-xs font-semibold disabled:opacity-50">{checking ? "Checking…" : "Check availability"}</button></div>{serviceChecked && slots.length > 0 && <div className="mt-5 grid max-h-[320px] gap-3 overflow-y-auto pr-2 sm:grid-cols-2">{slots.map((slot) => <button key={slot.id} onClick={() => setSlotId(slot.id)} className={`rounded border p-4 text-left ${slotId === slot.id ? "border-gold bg-surface ring-1 ring-gold" : "border-border"}`}><span className="flex items-center justify-between text-xs font-semibold"><span className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-gold" />{slotDate(slot.date)}</span>{slotId === slot.id && <Check className="h-4 w-4 text-gold" />}</span><span className="mt-2 flex items-center gap-2 text-xs text-text-secondary"><Clock className="h-4 w-4" />{slot.start_time}–{slot.end_time} · {slot.available_capacity} available</span></button>)}</div>}</section>
+        </div>
+            <aside className="rounded border border-border bg-surface p-6 lg:sticky lg:top-28"><h2 className="font-heading text-2xl">Trial summary</h2><div className="mt-5 space-y-4 border-y border-border py-5"><Summary icon={<CalendarDays />} text={selectedSlot ? `${slotDate(selectedSlot.date)}, ${selectedSlot.start_time}–${selectedSlot.end_time}` : "Select an available slot"} /><Summary icon={<MapPin />} text={address.address_1 ? `${address.address_1}, ${address.city}` : "Add your address"} /><Summary icon={<Sparkles />} text={`${items.length} piece${items.length === 1 ? "" : "s"} selected`} /></div><label className="mt-5 block text-xs font-semibold">Notes (optional)<textarea maxLength={500} rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} className="mt-2 w-full resize-none rounded border border-border bg-white px-4 py-3 text-sm font-normal" /></label><button disabled={submitting || !items.length || !slotId} onClick={book} className="mt-5 w-full rounded bg-text-primary px-5 py-4 text-xs font-semibold uppercase tracking-wider text-white disabled:opacity-50">{submitting ? "Booking…" : config?.trial_fee ? `Book for ${money(config.trial_fee, config.currency_code)}` : "Confirm free Home Trial"}</button><div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-text-secondary"><ShieldCheck className="h-4 w-4 text-emerald-700" />Verified mobile booking</div></aside></div>
     </main>;
 }
 
-function StepTitle({ number, title }: { number: string; title: string }) {
-    return <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-text-primary text-xs font-semibold text-white">{number}</span><h2 className="font-heading text-2xl">{title}</h2></div>;
-}
-
-function Field({ label, value, onChange, numeric = false }: { label: string; value: string; onChange: (value: string) => void; numeric?: boolean }) {
-    return <label className="text-xs font-semibold">{label}<input required inputMode={numeric ? "numeric" : undefined} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>;
-}
-
-function Summary({ icon, title, detail }: { icon: React.ReactNode; title: string; detail?: string }) {
-    return <div className="flex items-start gap-3"><span className="mt-0.5 block h-4 w-4 text-gold [&>svg]:h-4 [&>svg]:w-4">{icon}</span><div><p className="text-xs font-semibold text-text-primary">{title}</p>{detail && <p className="mt-1 text-xs">{detail}</p>}</div></div>;
-}
+function Step({ number, title }: { number: string; title: string }) { return <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-full bg-text-primary text-xs font-semibold text-white">{number}</span><h2 className="font-heading text-2xl">{title}</h2></div>; }
+function Field({ label, value, set, numeric, required = true }: { label: string; value: string; set: (value: string) => void; numeric?: boolean; required?: boolean }) { return <label className="text-xs font-semibold">{label}<input required={required} inputMode={numeric ? "numeric" : undefined} maxLength={numeric ? 6 : undefined} value={value} onChange={(event) => set(numeric ? event.target.value.replace(/\D/g, "") : event.target.value)} className="mt-2 w-full rounded border border-border bg-background px-4 py-3 text-sm font-normal outline-none focus:border-gold" /></label>; }
+function Summary({ icon, text }: { icon: React.ReactNode; text: string }) { return <div className="flex items-start gap-3 text-xs font-semibold"><span className="text-gold [&>svg]:h-4 [&>svg]:w-4">{icon}</span>{text}</div>; }

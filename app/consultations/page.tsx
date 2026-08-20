@@ -1,91 +1,45 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import SiteShell from "@/app/components/site-shell";
-import { Badge, BookingStatusBadge, SectionHeading } from "@/app/components/ui";
+import { CalendarDays, Package, ShieldCheck } from "lucide-react";
+import { cancelHomeTrial, getHomeTrialConfig, HomeTrialBooking, listHomeTrials } from "@/app/lib/medusa/home-trial";
 
-interface BookingSummary {
-    id: number;
-    customer_name: string;
-    slot: string;
-    status: string;
-}
+const money = (amount = 0, currency = "inr") => new Intl.NumberFormat("en-IN", { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(amount);
+const dateTime = (value: string) => new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }).format(new Date(value));
 
 export default function ConsultationsPage() {
-    const [bookings, setBookings] = useState<BookingSummary[]>([]);
+    const [bookings, setBookings] = useState<HomeTrialBooking[]>([]);
+    const [cutoff, setCutoff] = useState(60);
     const [loading, setLoading] = useState(true);
+    const [cancelling, setCancelling] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        let isMounted = true;
-
-        fetch("http://127.0.0.1:8000/api/bookings", {
-            headers: {
-                "Content-Type": "application/json",
-            },
-        })
-            .then(async (response) => {
-                if (!response.ok) {
-                    throw new Error("Unable to load consultations");
-                }
-
-                const payload = (await response.json()) as BookingSummary[];
-                if (isMounted) {
-                    setBookings(payload);
-                    setError(null);
-                }
-            })
-            .catch((err) => {
-                if (isMounted) {
-                    setError(err instanceof Error ? err.message : "Unable to load consultations");
-                }
-            })
-            .finally(() => {
-                if (isMounted) {
-                    setLoading(false);
-                }
-            });
-
-        return () => {
-            isMounted = false;
-        };
+        Promise.all([listHomeTrials(), getHomeTrialConfig()]).then(([trials, config]) => { setBookings(trials); setCutoff(config.cancellation_cutoff_minutes); }).catch((error) => setError(error instanceof Error ? error.message : "Unable to load Home Trials.")).finally(() => setLoading(false));
     }, []);
 
-    return (
-        <SiteShell activePage="/consultations" cartCount={1}>
-            <section className="rounded-[2rem] border border-stone-200 bg-[var(--surface)] p-6 sm:p-8">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <Badge label="My consultations" tone="gold" />
-                        <h1 className="mt-4 text-4xl font-semibold tracking-tight text-stone-900">Track upcoming and past home visits.</h1>
-                        <p className="mt-4 max-w-2xl text-lg leading-8 text-stone-600">
-                            Every booking keeps the same flow: review, visit, and buy only the pieces you keep.
-                        </p>
-                    </div>
-                </div>
-            </section>
+    const canCancel = (booking: HomeTrialBooking) => ["confirmed", "assigned"].includes(booking.status) && Date.now() <= new Date(booking.appointment_starts_at).getTime() - cutoff * 60_000;
+    const cancel = async (booking: HomeTrialBooking) => {
+        if (!window.confirm(`Cancel Home Trial #${booking.display_id}? Reserved inventory will be released.`)) return;
+        setCancelling(booking.id); setError(null);
+        try { const next = await cancelHomeTrial(booking.id); setBookings((current) => current.map((entry) => entry.id === next.id ? next : entry)); }
+        catch (error) { setError(error instanceof Error ? error.message : "Unable to cancel this booking."); }
+        finally { setCancelling(null); }
+    };
 
-            <section className="rounded-[2rem] border border-stone-200 bg-white p-6 sm:p-8">
-                <SectionHeading eyebrow="Booking history" title="Your consultations" />
-                <div className="mt-8 space-y-4">
-                    {loading ? (
-                        <p className="text-sm text-stone-600">Loading consultations…</p>
-                    ) : error ? (
-                        <p className="text-sm text-rose-600">{error}</p>
-                    ) : bookings.length > 0 ? bookings.map((booking) => (
-                        <div key={booking.id} className="flex flex-col gap-4 rounded-[1.5rem] border border-stone-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-stone-500">#{booking.id}</p>
-                                <h3 className="mt-2 text-xl font-semibold text-stone-900">{booking.customer_name} • {booking.slot}</h3>
-                                <p className="mt-2 text-sm text-stone-600">Home visit with representative</p>
-                            </div>
-                            <BookingStatusBadge status={booking.status as "Pending" | "Confirmed" | "Completed" | "Cancelled"} />
-                        </div>
-                    )) : (
-                        <p className="text-sm text-stone-600">No consultations have been created yet.</p>
-                    )}
-                </div>
-            </section>
-        </SiteShell>
-    );
+    if (loading) return <main className="flex min-h-[55vh] items-center justify-center"><p className="text-sm text-text-secondary">Loading your Home Trials…</p></main>;
+
+    return <main className="mx-auto w-full max-w-6xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <section className="rounded border border-border bg-surface p-7 sm:p-10"><p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">My Home Trials</p><h1 className="mt-3 font-heading text-4xl sm:text-5xl">Upcoming and past appointments.</h1><p className="mt-4 max-w-2xl text-sm leading-7 text-text-secondary">Bookings are connected to your verified mobile account. Eligible bookings can be cancelled up to {cutoff} minutes before the appointment.</p></section>
+        {error && <div role="alert" className="mt-6 rounded border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error} {bookings.length === 0 && <Link href="/account" className="ml-1 font-semibold underline">Sign in</Link>}</div>}
+        <section className="mt-7 rounded border border-border bg-white p-5 sm:p-8"><div className="flex items-center justify-between gap-4"><h2 className="font-heading text-2xl">Booking history</h2><Link href="/book" className="rounded bg-text-primary px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-white">Book a trial</Link></div>
+            {!error && bookings.length === 0 ? <div className="py-14 text-center"><ShieldCheck className="mx-auto h-7 w-7 text-gold" /><p className="mt-4 text-sm text-text-secondary">You have no Home Trial bookings yet.</p></div> : <div className="mt-7 space-y-4">{bookings.map((booking) => <article key={booking.id} className="rounded border border-border p-5 sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">#{booking.display_id}</p><h3 className="mt-2 font-heading text-2xl">{dateTime(booking.appointment_starts_at)}</h3><div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-secondary"><span className="flex items-center gap-1.5"><Package className="h-4 w-4 text-gold" />{booking.item_count} piece{booking.item_count === 1 ? "" : "s"} · {money(booking.estimated_value, booking.currency_code)}</span><span className="flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-gold" />{booking.postal_code}</span></div></div><Status value={booking.status} /></div><div className="mt-5 flex flex-wrap items-center gap-4 border-t border-border pt-4"><Link href={`/confirmation?bookingId=${encodeURIComponent(booking.id)}`} className="text-xs font-semibold underline">View details</Link>{canCancel(booking) && <button disabled={cancelling === booking.id} onClick={() => cancel(booking)} className="text-xs font-semibold text-rose-700 underline disabled:opacity-50">{cancelling === booking.id ? "Cancelling…" : "Cancel booking"}</button>}</div></article>)}</div>}
+        </section>
+    </main>;
+}
+
+function Status({ value }: { value: HomeTrialBooking["status"] }) {
+    const colors = value === "completed" ? "bg-emerald-50 text-emerald-800" : value === "cancelled" ? "bg-rose-50 text-rose-800" : "bg-amber-50 text-amber-800";
+    return <span className={`w-fit rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider ${colors}`}>{value.replaceAll("_", " ")}</span>;
 }

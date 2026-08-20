@@ -1,5 +1,4 @@
 export const HOME_TRIAL_STORAGE_KEY = "aurelia_home_trial_items";
-export const HOME_TRIAL_CONFIRMATION_KEY = "aurelia_home_trial_confirmation";
 
 export interface HomeTrialItem {
     product_id: string;

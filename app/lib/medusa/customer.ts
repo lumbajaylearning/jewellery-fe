@@ -1,82 +1,62 @@
 import { medusa } from "./client";
 
-export async function loginCustomer(email: string, password: string) {
-    const result = await medusa.auth.login("customer", "emailpass", { email, password });
-    if (typeof result !== "string") {
-        throw new Error("Email login could not be completed.");
-    }
+type Registration = { phone: string; first_name: string; last_name: string };
+type TokenResponse = { token?: string } | string;
+
+const tokenFrom = (value: TokenResponse, message: string) => {
+    const token = typeof value === "string" ? value : value.token;
+    if (!token) throw new Error(message);
+    return token;
+};
+
+export function normalizeIndianPhone(value: string) {
+    const digits = value.replace(/\D/g, "");
+    const national = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
+    if (!/^[6-9]\d{9}$/.test(national)) throw new Error("Enter a valid 10-digit Indian mobile number.");
+    return `+91${national}`;
+}
+
+export async function requestCustomerOtp(value: string) {
+    const phone = normalizeIndianPhone(value);
+    await medusa.client.fetch("/auth/customer/phone-auth", { method: "POST", body: { phone } });
+    return phone;
+}
+
+export async function verifyCustomerOtp(value: string, otp: string) {
+    const phone = normalizeIndianPhone(value);
+    const code = otp.replace(/\D/g, "");
+    if (code.length < 4) throw new Error("Enter the OTP sent to your mobile number.");
+    const response = await medusa.client.fetch<TokenResponse>(`/auth/customer/phone-auth/callback?phone=${encodeURIComponent(phone)}&otp=${encodeURIComponent(code)}`, { method: "POST" });
+    await medusa.client.setToken(tokenFrom(response, "OTP verification could not be completed."));
     const cartId = window.localStorage.getItem("medusa_cart_id");
-    if (cartId) {
-        await medusa.store.cart.transferCart(cartId).catch(() => undefined);
+    if (cartId) await medusa.store.cart.transferCart(cartId).catch(() => undefined);
+    return (await medusa.store.customer.retrieve()).customer;
+}
+
+export async function registerCustomer(data: Registration) {
+    const phone = normalizeIndianPhone(data.phone);
+    const response = await medusa.client.fetch<TokenResponse>("/auth/customer/phone-auth/register", { method: "POST", body: { phone } });
+    await medusa.client.setToken(tokenFrom(response, "Mobile registration could not be started."));
+    try {
+        await medusa.store.customer.create({
+            email: `${phone.slice(1)}@phone.aurum.local`,
+            phone,
+            first_name: data.first_name.trim(),
+            last_name: data.last_name.trim(),
+        });
+    } finally {
+        await medusa.client.clearToken();
     }
-    const { customer } = await medusa.store.customer.retrieve();
-    return customer;
+    await requestCustomerOtp(phone);
+    return phone;
 }
 
-export async function registerCustomer(data: {
-    email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-}) {
-    const { email, password, first_name, last_name } = data;
-    const result = await medusa.auth.register("customer", "emailpass", { email, password });
-    if (typeof result !== "string") {
-        throw new Error("Customer registration could not be completed.");
-    }
-    await medusa.store.customer.create({ email, first_name, last_name });
-    return loginCustomer(email, password);
-}
-
-export async function retrieveCustomer() {
-    const { customer } = await medusa.store.customer.retrieve();
-    return customer;
-}
-
-export async function updateCustomerProfile(data: {
-    first_name: string;
-    last_name: string;
-    phone?: string;
-}) {
-    const { customer } = await medusa.store.customer.update(data);
-    return customer;
-}
-
-export async function logoutCustomer() {
-    await medusa.auth.logout();
-}
-
-export async function listCustomerOrders() {
-    const response = await medusa.store.order.list({
-        limit: 50,
-        fields: "+items.*,+shipping_address.*",
-    });
-    return response.orders;
-}
-
-export async function retrieveCustomerOrder(orderId: string) {
-    const { order } = await medusa.store.order.retrieve(orderId, {
-        fields: "+items.*,+shipping_address.*,+shipping_methods.*",
-    });
-    return order;
-}
-
-export async function listCustomerAddresses() {
-    const response = await medusa.store.customer.listAddress({ limit: 50 });
-    return response.addresses;
-}
-
-export async function createCustomerAddress(address: any) {
-    const { customer } = await medusa.store.customer.createAddress(address);
-    return customer.addresses ?? [];
-}
-
-export async function updateCustomerAddress(addressId: string, address: any) {
-    const { customer } = await medusa.store.customer.updateAddress(addressId, address);
-    return customer.addresses ?? [];
-}
-
-export async function deleteCustomerAddress(addressId: string) {
-    const { parent } = await medusa.store.customer.deleteAddress(addressId);
-    return parent.addresses ?? [];
-}
+export async function retrieveCustomer() { return (await medusa.store.customer.retrieve()).customer; }
+export async function updateCustomerProfile(data: { first_name: string; last_name: string }) { return (await medusa.store.customer.update(data)).customer; }
+export async function logoutCustomer() { await medusa.auth.logout(); }
+export async function listCustomerOrders() { return (await medusa.store.order.list({ limit: 50, fields: "+items.*,+shipping_address.*" })).orders; }
+export async function retrieveCustomerOrder(orderId: string) { return (await medusa.store.order.retrieve(orderId, { fields: "+items.*,+shipping_address.*,+shipping_methods.*" })).order; }
+export async function listCustomerAddresses() { return (await medusa.store.customer.listAddress({ limit: 50 })).addresses; }
+export async function createCustomerAddress(address: any) { return (await medusa.store.customer.createAddress(address)).customer.addresses ?? []; }
+export async function updateCustomerAddress(addressId: string, address: any) { return (await medusa.store.customer.updateAddress(addressId, address)).customer.addresses ?? []; }
+export async function deleteCustomerAddress(addressId: string) { return (await medusa.store.customer.deleteAddress(addressId)).parent.addresses ?? []; }
