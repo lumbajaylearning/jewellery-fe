@@ -10,7 +10,7 @@ Connect the Next.js customer experience to the FastAPI backend so the UI moves f
 
 ## Integration architecture
 1. Add a shared frontend API client in [jewellery-fe/app/lib/api-client.ts](../app/lib/api-client.ts) (to be created).
-2. Use `NEXT_PUBLIC_API_URL` for the base URL, defaulting to `http://127.0.0.1:8000` in local development.
+2. Use `http://127.0.0.1:8000` in local development.
 3. Keep the frontend responsible for UI state and user flow; keep the backend responsible for pricing, cart rules, and booking validation.
 4. Add proper loading, empty, and error states on every page that calls the API.
 

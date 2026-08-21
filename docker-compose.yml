@@ -5,17 +5,16 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://strapi.navloka.in
-        STRAPI_URL: https://strapi.navloka.in
-        NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://medusa.navloka.in
+        NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
+        STRAPI_URL: ${STRAPI_URL}
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${NEXT_PUBLIC_MEDUSA_BACKEND_URL}
     ports:
       - "3000:3000"
+    env_file:
+      - .env.production
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: https://strapi.navloka.in
-      STRAPI_URL: https://strapi.navloka.in
-      NEXT_PUBLIC_MEDUSA_BACKEND_URL: https://medusa.navloka.in
     restart: unless-stopped
     networks:
       - booking-jewel_jewellery_network
