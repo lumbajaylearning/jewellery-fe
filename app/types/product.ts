@@ -36,3 +36,5 @@ export interface CartItem {
     image: string;
     sku: string;
 }
+
+export type Category = { id: string; handle: string; image?: string | null; name: string; description?: string | null }

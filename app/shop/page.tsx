@@ -34,8 +34,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     const maxPriceValue = valueOf(raw.max_price);
     const sortValue = valueOf(raw.sort);
     const page = Math.max(1, Number(valueOf(raw.page)) || 1);
-    const allowedSorts: ShopProductQuery["sort"][] = ["newest", "title-asc", "title-desc", "price-asc", "price-desc"];
-    const sort = allowedSorts.includes(sortValue as ShopProductQuery["sort"]) ? sortValue as ShopProductQuery["sort"] : "newest";
+    const allowedSorts: NonNullable<ShopProductQuery["sort"]>[] = ["newest", "title-asc", "title-desc", "price-asc", "price-desc"];
+    const sort: NonNullable<ShopProductQuery["sort"]> = allowedSorts.includes(sortValue as NonNullable<ShopProductQuery["sort"]>) ? (sortValue as NonNullable<ShopProductQuery["sort"]>) : "newest";
 
     const [{ products, count, limit }, categories] = await Promise.all([
         getProducts({
@@ -58,7 +58,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     if (categoryId) persistentParams.set("category", categoryId);
     if (minPriceValue) persistentParams.set("min_price", minPriceValue);
     if (maxPriceValue) persistentParams.set("max_price", maxPriceValue);
-    if (sort !== "newest") persistentParams.set("sort", sort);
+    if (sort && sort !== "newest") persistentParams.set("sort", sort);
     if (page > totalPages) redirect(pageUrl(persistentParams, totalPages));
     const visiblePages = Array.from({ length: totalPages }, (_, index) => index + 1).filter((number) => Math.abs(number - currentPage) <= 2);
 
