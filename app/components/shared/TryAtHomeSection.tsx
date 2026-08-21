@@ -34,7 +34,7 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
           </div>
 
           <p className="text-xs sm:text-sm text-[#B8B0A2] leading-relaxed font-light">
-            Shortlist up to four jewellery pieces and continue to booking. The final slot, service area and appointment details will be confirmed by the home-trial service.
+            Shortlist eligible jewellery and continue to booking. Current item and value limits, serviceability and appointment availability are verified by Medusa.
           </p>
 
           {/* 4 Feature Value Pillars */}
@@ -46,7 +46,7 @@ export const TryAtHomeSection: React.FC<TryAtHomeSectionProps> = ({ onOpenHomeTr
 
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
               <UserCheck className="w-4 h-4 text-[#C5A880] flex-shrink-0" />
-              <span><strong className="text-[#F5F2EB]">Up to four</strong> shortlisted pieces</span>
+              <span><strong className="text-[#F5F2EB]">Configured limits</strong> checked instantly</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs text-[#D8D1C5]">
