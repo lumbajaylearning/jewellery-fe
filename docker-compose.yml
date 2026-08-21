@@ -1,15 +1,24 @@
 services:
-  jewellery-fe:
-    container_name: jewellery-fe
+  frontend:
+    container_name: frontend
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_STRAPI_URL: ${NEXT_PUBLIC_STRAPI_URL}
+        STRAPI_URL: ${STRAPI_URL}
+        NEXT_PUBLIC_MEDUSA_BACKEND_URL: ${NEXT_PUBLIC_MEDUSA_BACKEND_URL}
     ports:
-      - "3001:3000"
+      - "3000:3000"
+    env_file:
+      - .env.production
     environment:
       NODE_ENV: production
       PORT: 3000
-      NEXT_PUBLIC_API_URL: http://host.docker.internal:1337
-      NEXT_PUBLIC_STRAPI_URL: http://host.docker.internal:1337
-      STRAPI_URL: http://host.docker.internal:1337
     restart: unless-stopped
+    networks:
+      - booking-jewel_jewellery_network
+
+networks:
+  booking-jewel_jewellery_network:
+    external: true

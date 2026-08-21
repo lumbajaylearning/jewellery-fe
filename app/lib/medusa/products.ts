@@ -1,4 +1,4 @@
-import { ShopProduct } from "@/app/types/product";
+import { Category, ShopProduct } from "@/app/types/product";
 import { medusa } from "./client";
 
 function formatPrice(amount: number, currencyCode: string) {
@@ -78,10 +78,10 @@ export async function getProducts(query: ShopProductQuery = {}) {
     });
 
     let products = response.products.map(mapMedusaProduct);
-    if (query.minPrice !== undefined) products = products.filter((product) => product.priceRange!.max >= query.minPrice!);
-    if (query.maxPrice !== undefined) products = products.filter((product) => product.priceRange!.min <= query.maxPrice!);
-    if (query.sort === "price-asc") products.sort((a, b) => a.price.amount - b.price.amount);
-    if (query.sort === "price-desc") products.sort((a, b) => b.price.amount - a.price.amount);
+    if (query.minPrice !== undefined) products = products.filter((product: ShopProduct) => product.priceRange!.max >= query.minPrice!);
+    if (query.maxPrice !== undefined) products = products.filter((product: ShopProduct) => product.priceRange!.min <= query.maxPrice!);
+    if (query.sort === "price-asc") products.sort((a: ShopProduct, b: ShopProduct) => a.price.amount - b.price.amount);
+    if (query.sort === "price-desc") products.sort((a: ShopProduct, b: ShopProduct) => b.price.amount - a.price.amount);
 
     const count = usesPriceQuery ? products.length : response.count;
     const offset = usesPriceQuery ? (page - 1) * limit : 0;
@@ -101,7 +101,7 @@ export async function getProductCategories() {
 
 export async function getProductCategoryByHandle(handle: string) {
     const categories = await getProductCategories();
-    return categories.find((category) => category.handle === handle) ?? null;
+    return categories.find((category: { handle?: string | null }) => category.handle === handle) ?? null;
 }
 
 

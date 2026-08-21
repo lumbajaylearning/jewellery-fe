@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import type { StrapiContentNode, StrapiTextNode } from "@/app/types/content-page";
 
-const STRAPI_URL = process.env.STRAPI_URL ?? process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://127.0.0.1:1337";
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://127.0.0.1:1337";
 
 function safeHref(value?: string) {
     if (!value) return "#";
@@ -51,7 +51,15 @@ function renderBlock(block: StrapiContentNode, key: string): ReactNode {
             return <blockquote key={key} className="border-l-2 border-gold bg-surface px-5 py-4 font-heading text-xl italic leading-8 text-text-primary">{renderChildren(block.children, key)}</blockquote>;
         case "list": {
             const List = block.format === "ordered" ? "ol" : "ul";
-            return <List key={key} className={`space-y-2 pl-6 text-base leading-7 text-text-secondary ${block.format === "ordered" ? "list-decimal" : "list-disc"}`}>{block.children?.map((child, index) => <li key={`${key}-${index}`}>{renderChildren(child.children, `${key}-${index}`)}</li>)}</List>;
+            return (
+                <List key={key} className={`space-y-2 pl-6 text-base leading-7 text-text-secondary ${block.format === "ordered" ? "list-decimal" : "list-disc"}`}>
+                    {block.children?.map((child, index) => {
+                        const childKey = `${key}-${index}`;
+                        const listChildren = "children" in child ? child.children ?? [] : [];
+                        return <li key={childKey}>{renderChildren(listChildren, childKey)}</li>;
+                    })}
+                </List>
+            );
         }
         case "code":
             return <pre key={key} className="overflow-x-auto rounded border border-border bg-[#1C1917] p-5 text-sm leading-6 text-white"><code>{block.children?.map((child) => child.type === "text" ? (child as StrapiTextNode).text : "").join("")}</code></pre>;

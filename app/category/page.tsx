@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Gem, Sparkles } from "lucide-react";
 import { getProductCategories } from "@/app/lib/medusa/products";
+import { Category } from "@/app/types/product";
 
 export default async function CategoriesPage() {
     const categories = await getProductCategories();
@@ -14,7 +15,7 @@ export default async function CategoriesPage() {
         </header>
 
         {categories.length > 0 ? <section className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-            {categories.map((category, index) => <Link key={category.id} href={`/category/${category.handle}`} className="group min-w-0 overflow-hidden rounded border border-border bg-white transition hover:border-gold hover:shadow-sm">
+            {categories.map((category: Category, index: number) => <Link key={category.id} href={`/category/${category.handle}`} className="group min-w-0 overflow-hidden rounded border border-border bg-white transition hover:border-gold hover:shadow-sm">
                 <div className="relative aspect-[4/3] overflow-hidden bg-surface sm:aspect-[16/10]">
                     {category.image ? <img src={category.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,#ffffff_0,#f1ece4_70%)]"><Gem className="h-8 w-8 text-gold sm:h-12 sm:w-12" /><span className="absolute left-3 top-3 text-[10px] font-semibold tracking-[0.2em] text-text-secondary sm:left-5 sm:top-5">{String(index + 1).padStart(2, "0")}</span></div>}
                 </div>

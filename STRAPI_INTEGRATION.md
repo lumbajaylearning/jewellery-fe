@@ -34,14 +34,6 @@ jewellery-fe/
 
 ### 1. Environment Configuration
 The `.env.local` file is already configured with the default Strapi URL:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:1337
-```
-
-If your Strapi instance runs on a different URL, update this value. For production:
-```env
-NEXT_PUBLIC_API_URL=https://your-strapi-domain.com
-```
 
 ### 2. Verify Strapi is Running
 Ensure Strapi CMS is running with the homepage content type configured:
@@ -287,7 +279,6 @@ curl http://localhost:1337/api/homepages?populate=*
 **Problem**: "Unable to load homepage data"
 **Solution**: 
 - Check if Strapi is running (`pnpm dev` in jewell-app-cms)
-- Verify `NEXT_PUBLIC_API_URL` in `.env.local`
 - Check browser console for detailed error
 
 ### 2. Empty Sections

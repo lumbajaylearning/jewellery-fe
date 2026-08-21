@@ -5,7 +5,6 @@ type HeroBannerComponentProps = Omit<HeroBannerProps, "id" | "__component">;
 
 const STRAPI_URL =
     process.env.NEXT_PUBLIC_STRAPI_URL ??
-    process.env.STRAPI_URL ??
     "http://127.0.0.1:1337";
 
 function resolveStrapiImageUrl(url?: string | null) {
