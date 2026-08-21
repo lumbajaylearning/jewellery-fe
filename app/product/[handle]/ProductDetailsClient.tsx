@@ -113,21 +113,29 @@ export default function ProductDetailsClient({ product }: ProductDetailsClientPr
         if (added) router.push("/checkout");
     };
 
-    const handleHomeTrial = () => {
+    const handleHomeTrial = async () => {
         if (!selectedVariant?.id) {
             showToast("Select an available option before booking a home trial");
             return;
         }
-        addHomeTrialItem({
-            product_id: product.id,
-            variant_id: selectedVariant.id,
-            title: product.title,
-            variant_title: selectedVariant.title,
-            thumbnail: product.thumbnail ?? product.images?.[0]?.url,
-            price,
-            currency_code: selectedVariant.calculated_price?.currency_code ?? "inr",
-        });
-        router.push("/book");
+        if (!selectedVariantInStock) {
+            showToast("This option is currently unavailable for a Home Trial");
+            return;
+        }
+        try {
+            await addHomeTrialItem({
+                product_id: product.id,
+                variant_id: selectedVariant.id,
+                title: product.title,
+                variant_title: selectedVariant.title,
+                thumbnail: product.thumbnail ?? product.images?.[0]?.url,
+                price,
+                currency_code: selectedVariant.calculated_price?.currency_code ?? "inr",
+            });
+            router.push("/book");
+        } catch (error) {
+            showToast(error instanceof Error ? error.message : "Unable to add this piece to your Home Trial");
+        }
     };
 
     const handleRemoveCartItem = async (id: string) => {
